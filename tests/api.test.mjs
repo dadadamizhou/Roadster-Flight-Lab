@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+const origin='http://127.0.0.1:5173';
+const send=async(path,body)=>{const r=await fetch(origin+path,{method:'POST',headers:{'Content-Type':'application/json','Origin':origin},body:JSON.stringify(body)});return {status:r.status,data:await r.json()};};
+const player='test-'+crypto.randomUUID(),run=await send('/api/runs',{player,map:'city'});assert.equal(run.status,200);assert(run.data.id);
+const b={run:run.data.id,player,name:'QA LOCAL',time:22.1,rings:3,collisions:1,landings:2};
+assert.equal((await send('/api/scores',b)).status,400,'early submission must be rejected');
+assert.equal((await send('/api/scores',{...b,rings:99})).status,400);
+await new Promise(r=>setTimeout(r,22500));
+const r=await send('/api/scores',b);assert.equal(r.status,200,JSON.stringify(r));assert.equal(r.data.score,Math.round(15000-22.1*35+3*800+2*250-650));
+assert.equal((await send('/api/scores',b)).status,409,'duplicate must be rejected');
+const board=await (await fetch(origin+'/api/scores?map=city')).json();assert(board.scores.some(s=>s.name==='QA LOCAL'));
+console.log('Local API: start, early-score rejection, validation, submission, duplicate protection, and leaderboard passed.');

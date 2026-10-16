@@ -1,0 +1,1 @@
+export default function Home(){return <iframe src="/game/index.html" title="Roadster Flight Lab 喷气驾驶游戏" allow="fullscreen; autoplay" style={{position:'fixed',inset:0,width:'100%',height:'100%',border:0,background:'#080e12'}}/>;}
