@@ -3,13 +3,13 @@ import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import path from 'node:path';
 import { get, put, BlobPreconditionFailedError } from '@vercel/blob';
 
-export const lengths: Record<string, number> = { city: 1800, canyon: 2000, orbit: 2200 };
-const localDir = path.join(process.cwd(), '.local');
+export const mapIds = new Set(['city', 'canyon', 'orbit']);
+const localDir = path.join(process.cwd(), '.local', 'endless-v2');
 const remote = process.env.VERCEL === '1' || process.env.USE_REMOTE_SCORES === '1';
 export class HttpError extends Error { constructor(message: string, public status = 400) { super(message); } }
-export type Score = { player: string; name: string; map: string; score: number; time: number; rings: number; collisions: number; landings: number; created: number };
+export type Score = { player: string; name: string; map: string; score: number; time: number; distance: number; rings: number; collisions: number; landings: number; driftMeters: number; drifts: number; rolls: number; nearMisses: number; gripSections: number; comboBonus: number; created: number };
 type Board = { entries: Score[]; used: string[] };
-type Run = { player: string; map: string; started: number; nonce: string };
+type Run = { version: number; player: string; map: string; started: number; nonce: string };
 const empty = (): Board => ({ entries: [], used: [] });
 let localLock: Promise<unknown> = Promise.resolve();
 
@@ -24,7 +24,7 @@ async function secret() {
   }
 }
 export async function issueRun(map: string, player: string) {
-  const payload = Buffer.from(JSON.stringify({ map, player, started: Date.now(), nonce: randomUUID() })).toString('base64url');
+  const payload = Buffer.from(JSON.stringify({ version: 2, map, player, started: Date.now(), nonce: randomUUID() })).toString('base64url');
   return payload + '.' + createHmac('sha256', await secret()).update(payload).digest('base64url');
 }
 export async function verifyRun(token: string, player: string): Promise<Run> {
@@ -34,7 +34,7 @@ export async function verifyRun(token: string, player: string): Promise<Run> {
   const actual = Buffer.from(signature || '', 'base64url');
   if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) throw new HttpError('比赛凭证无效');
   const run = JSON.parse(Buffer.from(payload, 'base64url').toString()) as Run;
-  if (run.player !== player || !lengths[run.map] || Date.now() - run.started > 7200000) throw new HttpError('比赛已过期，请重新开始');
+  if (run.version !== 2 || run.player !== player || !mapIds.has(run.map) || Date.now() - run.started > 604800000) throw new HttpError('比赛已过期，请重新开始');
   return run;
 }
 async function readBoard(map: string): Promise<{ board: Board; etag?: string }> {
@@ -43,13 +43,13 @@ async function readBoard(map: string): Promise<{ board: Board; etag?: string }> 
     catch (e) { if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e; return { board: empty() }; }
   }
   if (!process.env.BLOB_READ_WRITE_TOKEN) throw new HttpError('排行榜存储尚未连接', 503);
-  const blob = await get('leaderboards/' + map + '.json', { access: 'private', useCache: false });
+  const blob = await get('leaderboards/endless-v2/' + map + '.json', { access: 'private', useCache: false });
   if (!blob) return { board: empty() };
   return { board: await new Response(blob.stream).json() as Board, etag: blob.blob.etag };
 }
 export async function listScores(map: string) {
   const { board } = await readBoard(map);
-  return board.entries.slice(0, 20).map(({ name, score, time, rings, collisions }) => ({ name, score, time, rings, collisions }));
+  return board.entries.slice(0, 20).map(({ name, score, time, distance, rings, collisions, drifts, rolls }) => ({ name, score, time, distance, rings, collisions, drifts, rolls }));
 }
 function add(board: Board, run: Run, entry: Score): Board {
   if (board.used.includes(run.nonce)) throw new HttpError('本轮成绩已提交', 409);
@@ -72,7 +72,7 @@ export async function saveScore(run: Run, entry: Score) {
   for (let attempt = 0; attempt < 5; attempt++) {
     const { board, etag } = await readBoard(run.map);
     try {
-      await put('leaderboards/' + run.map + '.json', JSON.stringify(add(board, run, entry)), {
+      await put('leaderboards/endless-v2/' + run.map + '.json', JSON.stringify(add(board, run, entry)), {
         access: 'private', addRandomSuffix: false, contentType: 'application/json', cacheControlMaxAge: 60,
         allowOverwrite: !!etag, ...(etag ? { ifMatch: etag } : {}),
       });

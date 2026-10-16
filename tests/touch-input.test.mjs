@@ -44,7 +44,7 @@ boost.send('pointerdown', 9, { pointerType: 'mouse' }); boost.send('pointermove'
 assert.equal(input.pressed('Space'), false, 'Mouse clicks do not accidentally trigger a slide gesture');
 const car = fresh(MAPS.city); car.air = 0;
 for (let i = 0; i < 120; i++) step(car, { throttle: input.pressed('KeyW'), boost: input.pressed('ShiftLeft') }, 1 / 120, MAPS.city);
-assert.ok(car.v > 10 && car.battery < 100 && car.air === 0, 'The mobile accelerator still drives on electricity when air is empty');
+assert.ok(car.v > 10 && !("battery" in car) && car.air === 0, 'Automatic driving still works when air is empty');
 input.clear();
 const pad = new Button(240), steering = createSteeringInput(pad, () => enabled);
 pad.send('pointerdown', 11, { clientX: 326 }); assert.equal(steering.value, 0);
