@@ -1,0 +1,8 @@
+html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none;background:#080e12}
+.game-viewport{position:fixed;inset:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);overflow:hidden;background:#080e12}
+.game-viewport iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#080e12}
+/* Always render a landscape game viewport, even when the browser cannot lock
+   the physical screen (for example Safari with rotation lock enabled). */
+@media(orientation:portrait) and (max-width:900px),(orientation:portrait) and (pointer:coarse){
+  .game-viewport iframe{inset:auto;left:50%;top:50%;width:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));height:calc(100dvw - env(safe-area-inset-left) - env(safe-area-inset-right));transform:translate(-50%,-50%) rotate(90deg);transform-origin:center}
+}

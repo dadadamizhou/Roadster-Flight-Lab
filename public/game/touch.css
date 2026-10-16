@@ -1,0 +1,116 @@
+/* Shared control styling; the mobile layout reserves the edges for thumbs. */
+.touch-only,.mobile-label,.flight-controls>.touch-only,.steering-pad{display:none}
+.control-symbol{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+#boostBtn .control-symbol{fill:currentColor;stroke:none}
+.flight-controls>button:not(.pause){border-radius:16px;min-width:100px;gap:7px;padding:16px 20px;position:relative;transition:background .1s,border-color .1s,box-shadow .1s}
+.flight-controls>button:not(.pause) kbd{position:absolute;top:11px;right:10px;font-size:7px;padding:3px;opacity:.6}
+.flight-controls>button:not(.pause) .control-symbol{margin:5px 0 3px}
+#boostBtn{color:var(--mint);border-color:#a4f5ce55;background:linear-gradient(145deg,#23493dd9,#0b1f1ccf)}
+#liftBtn{color:#b8dcff;border-color:#9fceff55;background:linear-gradient(145deg,#233d52d9,#101e2dcf)}
+.flight-controls>button:not(.pause).pressed,.flight-controls>button:not(.pause).active{border-color:currentColor;box-shadow:0 0 24px #a4f5ce25,inset 0 0 18px #a4f5ce12;background:#345d4be8}
+#liftBtn.pressed,#liftBtn.active{background:#2b5678e8;box-shadow:0 0 24px #97c9ff30,inset 0 0 18px #97c9ff16}
+button[data-key].pressed,.maneuvers button.pressed{color:var(--mint);border-color:var(--mint);background:#284d43e8}
+.touch-drive button,.flight-controls button,.maneuvers button,.action-row button{-webkit-touch-callout:none;touch-action:none}
+.maneuvers{border-radius:14px}
+.maneuvers button{border-radius:8px;min-height:42px}
+
+@media(max-width:900px),(pointer:coarse){
+  :root{--pad-left:max(18px,env(safe-area-inset-left));--pad-right:max(18px,env(safe-area-inset-right));--pad-bottom:calc(clamp(42px,7vh,64px) + env(safe-area-inset-bottom));--boost-size:76px;--jump-size:76px}
+  .racing{overscroll-behavior:none}
+  .racing header{height:60px;top:env(safe-area-inset-top);padding:10px var(--pad-left);pointer-events:none}
+  .racing header button{pointer-events:auto}
+  .racing .brand span{font-size:12px;letter-spacing:2px}
+  .racing .brand small{font-size:5px}
+  .racing #settingsBtn{display:none}
+  .racing #soundBtn{position:fixed;top:calc(9px + env(safe-area-inset-top));right:calc(var(--pad-right) + 48px);width:44px;height:44px;font-size:21px}
+  .racing .run-top{top:calc(68px + env(safe-area-inset-top));left:var(--pad-left);right:var(--pad-right);gap:12px;grid-template-columns:1fr 1fr 1fr}
+  .run-top .eyebrow{font-size:8px;letter-spacing:.4px;line-height:1.5}
+  .run-top small{font-size:7px;letter-spacing:.7px}
+  .time{gap:5px}.time b{font-size:21px;letter-spacing:0}.score b{font-size:22px}.score span{font-size:9px}
+  .progress-line{margin:9px 0 6px}
+  #minimap{display:none}
+  .dashboard{position:static;display:block;pointer-events:none}
+  .resources{position:fixed;left:var(--pad-left);right:var(--pad-right);top:calc(136px + env(safe-area-inset-top));width:auto;max-width:none;padding:12px 14px 3px;display:grid;grid-template-columns:1fr 1fr;gap:16px;background:#09171eb8;border:1px solid #adcbd51f;border-radius:13px;backdrop-filter:none;pointer-events:none}
+  .resource>div:first-child{font-size:10px}.resource b{font-size:17px}.resource b span{font-size:8px}
+  .resource small{display:none}.bar,.air .bar{height:3px;margin:8px 0 9px}
+  .action-row{position:fixed;left:var(--pad-left);right:var(--pad-right);bottom:calc(var(--pad-bottom) + 210px);display:flex;gap:7px;padding:0;border:0;pointer-events:none}
+  .action-row button{min-height:44px;padding:0 8px;border:1px solid #9fbfc733;border-radius:22px;background:#0b1d29d9;color:#c0d3d8;font-size:10px;display:flex;align-items:center;justify-content:center;gap:4px;pointer-events:auto}
+  .action-row button.on{border-color:#a4f5ce77;background:#173b31e6;color:var(--mint)}
+  .action-row button kbd{display:none}.action-row i{margin-left:0;flex:none}
+  .action-row #autoBtn{font-size:9px}
+  #maneuverToggle span{font-size:16px;transition:transform .15s}
+  #maneuverToggle[aria-expanded="true"]{border-color:#a4f5ce99;color:var(--mint)}
+  #maneuverToggle[aria-expanded="true"] span{transform:rotate(180deg)}
+  .speed{position:fixed;bottom:calc(var(--pad-bottom) + 155px);left:var(--pad-left);min-width:0;pointer-events:none}
+  .speed>span{display:none}.speed b{font-size:40px;letter-spacing:-2px;line-height:1}.speed>div{gap:7px}.speed>div>span{font-size:8px}
+  .speed small{font-size:8px;letter-spacing:0}.speed i{margin:0 3px}
+  .flight-controls{position:fixed;right:var(--pad-right);bottom:var(--pad-bottom);display:flex;flex-direction:column;align-items:center;gap:12px;min-width:0;width:var(--boost-size);pointer-events:none}
+  .flight-controls>button:not(.pause){flex:none;min-width:0;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;border-width:2px;pointer-events:auto;box-shadow:0 5px 18px #0006,inset 0 0 0 5px #ffffff06;isolation:isolate}
+  .flight-controls>button:not(.pause)::after{content:"";position:absolute;inset:5px;border:1px solid #d7fff214;border-radius:50%;pointer-events:none}
+  .flight-controls>button:not(.pause) kbd,.flight-controls .desktop-label{display:none}
+  .flight-controls .mobile-label{display:block}
+  .flight-controls>button:not(.pause) .control-symbol{width:24px;height:24px;margin:0}
+  .flight-controls span{font-size:14px;font-weight:600;letter-spacing:1px}
+  .flight-controls small.mobile-label{font-size:8px;letter-spacing:.5px;font-weight:400;color:#b1d4c4}
+  #liftBtn{order:0;width:var(--jump-size);height:var(--jump-size);background:linear-gradient(145deg,#3c6179e8,#112d43eb)}
+  #boostBtn{order:1;width:var(--boost-size);height:var(--boost-size);background:linear-gradient(145deg,#426e53ed,#163e30eb)}
+  #boostBtn .control-symbol{width:29px;height:29px}
+  .flight-controls>button:not(.pause).pressed{box-shadow:0 0 0 5px #a4f5ce18,0 0 28px #a4f5ce40,inset 0 0 22px #c6ffe22b;background:#4f9264f5}
+  #liftBtn.pressed{background:#457fa7f5;box-shadow:0 0 0 5px #97c9ff18,0 0 28px #97c9ff40,inset 0 0 22px #d0eaff2b}
+  .flight-controls .pause{position:fixed;top:calc(9px + env(safe-area-inset-top));right:var(--pad-right);bottom:auto;width:44px;height:44px;min-width:44px;border:1px solid #a4c5cb33;border-radius:50%;padding:0;background:#0b1c29c9;font-size:0;pointer-events:auto}
+  .flight-controls .pause::before{content:"Ⅱ";font-size:20px;color:#d1e0e5}.flight-controls .pause kbd{display:none}
+  .touch-drive{position:fixed;left:var(--pad-left);bottom:calc(var(--pad-bottom) + 30px);display:flex;gap:12px;pointer-events:none}
+  .touch-drive button{pointer-events:auto;width:64px;height:64px;min-width:64px;padding:0;border:1.5px solid #adcbd766;border-radius:50%;background:linear-gradient(145deg,#264251d9,#102331e6);font-size:21px;box-shadow:0 4px 16px #0003,inset 0 0 0 4px #ffffff04}
+  .flight-controls>button.touch-brake{position:absolute;right:calc(100% + 12px);bottom:0;min-width:0;width:var(--boost-size);height:var(--boost-size);font-size:12px;color:#efc7b5;border-color:#dcb09b77;background:linear-gradient(145deg,#624439e8,#332a2beb)}
+  .touch-drive button.pressed{background:#386556ed;color:#dbfff0;box-shadow:0 0 0 4px #a4f5ce16;border-color:var(--mint)}
+  .flight-controls>button.touch-brake.pressed{background:#915d4ef0;color:#fff0dc;border-color:#efbb9e;box-shadow:0 0 0 4px #efbb9e18,0 0 20px #efbb9e22}
+  .maneuvers{display:none;position:fixed;top:auto;bottom:calc(var(--pad-bottom) + 265px);left:var(--pad-left);right:var(--pad-right);width:auto;padding:13px;background:#0b1c28f0;border:1px solid #9dbcc74d;border-radius:18px;z-index:12}
+  .maneuvers-open .maneuvers{display:block}.maneuvers>span{font-size:8px}.maneuvers>div{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:11px}
+  .maneuvers button{min-height:48px;padding:6px 2px;font-size:11px;border-radius:13px}.maneuvers kbd{display:none}.maneuvers small{font-size:9px;margin-top:10px}
+  .bottom-hint{display:none}
+  #message{top:calc(206px + env(safe-area-inset-top));max-width:88%;font-size:11px;letter-spacing:.5px;white-space:normal;width:max-content;border-radius:12px}
+  #countdown{top:34%;font-size:80px}
+  .controls-list{grid-template-columns:1fr 1fr}
+  .panel{border-radius:20px;touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+}
+
+/* Landscape phones keep the main buttons beside the road, not over it. */
+@media(orientation:landscape) and (max-height:600px) and (max-width:900px),(orientation:landscape) and (max-height:600px) and (pointer:coarse){
+  :root{--pad-bottom:calc(clamp(36px,11vh,56px) + env(safe-area-inset-bottom));--boost-size:76px;--jump-size:76px}
+  .racing header{height:48px;padding-top:4px}.racing .brand small{display:none}
+  header{height:54px;padding:12px 4.5%}.hero{top:62px}.hero h1{font-size:43px;margin:10px 0;letter-spacing:-2px}.hero p,.hero-tag{display:none}.hero .eyebrow{font-size:7px;letter-spacing:1px}
+  .menu-bottom{bottom:30px;left:4.5%;right:4.5%}.section-label{font-size:8px;margin-bottom:7px}.section-label span:last-child{font-size:6px}.maps{gap:10px}.map-info{display:flex;padding:10px 12px;gap:10px}.map-index{margin:0}.map h3{font-size:13px}.map p{font-size:6px;margin-top:5px}.map-meta{display:none}.launch-help{display:none}.launch-row{justify-content:flex-end;margin-top:8px}.launch-row .primary{width:auto;min-width:170px;padding:10px 20px}.primary span{font-size:17px}footer{bottom:10px;font-size:6px}footer span:nth-child(2){display:none}
+  .racing .run-top{top:calc(53px + env(safe-area-inset-top));left:var(--pad-left);right:var(--pad-right);grid-template-columns:185px 1fr 110px}
+  .run-top .time{position:fixed;top:17px;left:53%;width:90px}.run-top .time small{display:none}
+  .run-top .score{position:fixed;top:60px;right:var(--pad-right)}
+  .resources{top:calc(112px + env(safe-area-inset-top));right:auto;width:205px;padding:8px 11px 0;gap:12px}
+  .resource>div:first-child{font-size:8px}.resource b{font-size:14px}
+  .action-row{left:50%;right:auto;transform:translateX(-50%);bottom:var(--pad-bottom);width:min(290px,calc(100vw - 352px))}
+  .action-row button{min-height:44px;padding:0 7px;font-size:9px}
+  .speed{top:12px;bottom:auto;left:32%;min-width:90px}.speed b{font-size:32px}.speed small{font-size:7px}.speed>div>span{font-size:8px}
+  .flight-controls{gap:10px}
+  .flight-controls span{font-size:12px}.flight-controls>button:not(.pause) .control-symbol{width:21px;height:21px}
+  .touch-drive button{width:60px;height:60px;min-width:60px}.flight-controls>button.touch-brake{bottom:0;width:var(--boost-size);height:var(--boost-size);min-width:0}
+  .maneuvers{left:50%;right:auto;transform:translateX(-50%);bottom:calc(var(--pad-bottom) + 55px);width:310px}
+  #message{top:105px;max-width:46%;font-size:10px}
+  #countdown{top:25%;font-size:70px}
+}
+@media(max-width:360px){:root{--pad-left:12px;--pad-right:12px;--boost-size:84px;--jump-size:70px}.action-row{gap:5px}.action-row button{font-size:9px;padding:0 5px}.touch-drive{gap:10px}.touch-drive button{width:60px;height:60px;min-width:60px}.flight-controls>button.touch-brake{right:calc(100% + 12px)}}
+@media(prefers-reduced-motion:reduce){.flight-controls>button,#maneuverToggle span{transition:none}}
+
+@media(orientation:landscape) and (max-width:650px){.speed{left:35%;top:10px}.speed b{font-size:28px}.speed small{font-size:6px}.run-top .time{left:55%;top:15px;width:80px}.time b{font-size:18px}.action-row{gap:4px}.action-row button,.action-row #autoBtn{font-size:8px;padding:0 3px}.hero h1{font-size:37px}.hero .eyebrow{font-size:6px}.map-info{padding:8px}.map h3{font-size:11px}.racing .brand span{font-size:10px}.racing .brand svg{width:20px}.resources{width:182px;padding:8px 9px 0}.racing .run-top{grid-template-columns:182px 1fr 90px}}
+
+@media(max-width:900px),(pointer:coarse){
+  .touch-drive{left:calc(var(--pad-left) + 8px);bottom:calc(var(--pad-bottom) + 14px)}
+  .steering-pad{position:relative;display:block;width:112px;height:112px;touch-action:none;-webkit-touch-callout:none;border:1px solid #a2c8d14d;border-radius:50%;background:radial-gradient(circle,#213e4a77 0 37%,#0b1b2877 38% 65%,#9cbcca12 66%);box-shadow:inset 0 0 0 7px #cadde707,0 8px 20px #0003;pointer-events:auto}
+  .stick-knob{position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%) translateX(var(--stick-x,0px));border:1.5px solid #c6e3e788;border-radius:50%;background:linear-gradient(145deg,#63828cdb,#2b4858eb);box-shadow:0 4px 12px #0005,inset 0 0 0 4px #d8ffff0b;pointer-events:none}
+  .steering-pad.pressed{border-color:#a4f5ce88;box-shadow:0 0 22px #a4f5ce18}.steering-pad.pressed .stick-knob{border-color:var(--mint);background:linear-gradient(145deg,#75ae95,#315c51)}
+  .stick-arrow{position:absolute;top:50%;transform:translateY(-50%);font-size:25px;color:#afccd46b;pointer-events:none}.stick-arrow.left{left:12px}.stick-arrow.right{right:12px}
+  .steering-pad small{position:absolute;bottom:-19px;width:100%;text-align:center;letter-spacing:3px;font-size:8px;color:#a8c0c580;pointer-events:none}
+  #boostBtn .control-symbol{width:24px;height:24px}.flight-controls small.mobile-label{font-size:7px}
+}
+@media(orientation:landscape) and (max-width:650px){
+  :root{--boost-size:64px;--jump-size:64px}
+  .steering-pad{width:104px;height:104px}.flight-controls>button:not(.pause) .control-symbol{width:21px;height:21px}.flight-controls span{font-size:11px}
+}
+@media(orientation:landscape) and (max-width:550px){.action-row{width:124px;display:grid;grid-template-columns:1fr 1fr;gap:6px}.action-row button{min-width:0;font-size:8px}.touch-drive{left:var(--pad-left)}.steering-pad{width:94px;height:94px}.resources{top:104px}.maneuvers{width:270px;bottom:calc(var(--pad-bottom) + 100px)}}
