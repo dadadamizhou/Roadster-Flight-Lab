@@ -1,147 +1,123 @@
-/* Shared control styling; the mobile layout reserves the edges for thumbs. */
-.touch-only,.mobile-label,.flight-controls>.touch-only,.steering-pad{display:none}
-.control-symbol{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
-#boostBtn .control-symbol{fill:currentColor;stroke:none}
-.flight-controls>button:not(.pause){border-radius:16px;min-width:100px;gap:7px;padding:16px 20px;position:relative;transition:background .1s,border-color .1s,box-shadow .1s}
-.flight-controls>button:not(.pause) kbd{position:absolute;top:11px;right:10px;font-size:7px;padding:3px;opacity:.6}
-.flight-controls>button:not(.pause) .control-symbol{margin:5px 0 3px}
-#boostBtn{color:var(--mint);border-color:#a4f5ce55;background:linear-gradient(145deg,#23493dd9,#0b1f1ccf)}
-#liftBtn{color:#b8dcff;border-color:#9fceff55;background:linear-gradient(145deg,#233d52d9,#101e2dcf)}
-.flight-controls>button:not(.pause).pressed,.flight-controls>button:not(.pause).active{border-color:currentColor;box-shadow:0 0 24px #a4f5ce25,inset 0 0 18px #a4f5ce12;background:#345d4be8}
-#liftBtn.pressed,#liftBtn.active{background:#2b5678e8;box-shadow:0 0 24px #97c9ff30,inset 0 0 18px #97c9ff16}
-button[data-key].pressed,.maneuvers button.pressed{color:var(--mint);border-color:var(--mint);background:#284d43e8}
-.touch-drive button,.flight-controls button,.maneuvers button,.action-row button{-webkit-touch-callout:none;touch-action:none}
-.maneuvers{border-radius:14px}
-.maneuvers button{border-radius:8px;min-height:42px}
-
-@media(max-width:900px),(pointer:coarse){
-  :root{--pad-left:max(18px,env(safe-area-inset-left));--pad-right:max(18px,env(safe-area-inset-right));--pad-bottom:calc(clamp(42px,7vh,64px) + env(safe-area-inset-bottom));--boost-size:76px;--jump-size:76px}
-  .racing{overscroll-behavior:none}
-  .racing header{height:60px;top:env(safe-area-inset-top);padding:10px var(--pad-left);pointer-events:none}
-  .racing header button{pointer-events:auto}
-  .racing .brand span{font-size:12px;letter-spacing:2px}
-  .racing .brand small{font-size:5px}
-  .racing #settingsBtn{display:none}
-  .racing #soundBtn{position:fixed;top:calc(9px + env(safe-area-inset-top));right:calc(var(--pad-right) + 48px);width:44px;height:44px;font-size:21px}
-  .racing .run-top{top:calc(68px + env(safe-area-inset-top));left:var(--pad-left);right:var(--pad-right);gap:12px;grid-template-columns:1fr 1fr 1fr}
-  .run-top .eyebrow{font-size:8px;letter-spacing:.4px;line-height:1.5}
-  .run-top small{font-size:7px;letter-spacing:.7px}
-  .time{gap:5px}.time b{font-size:21px;letter-spacing:0}.score b{font-size:22px}.score span{font-size:9px}
-  .progress-line{margin:9px 0 6px}
-  #minimap{display:none}
-  .dashboard{position:static;display:block;pointer-events:none}
-  .resources{position:fixed;left:var(--pad-left);right:var(--pad-right);top:calc(136px + env(safe-area-inset-top));width:auto;max-width:none;padding:12px 14px 3px;display:grid;grid-template-columns:1fr 1fr;gap:16px;background:#09171eb8;border:1px solid #adcbd51f;border-radius:13px;backdrop-filter:none;pointer-events:none}
-  .resource>div:first-child{font-size:10px}.resource b{font-size:17px}.resource b span{font-size:8px}
-  .resource small{display:none}.bar,.air .bar{height:3px;margin:8px 0 9px}
-  .action-row{position:fixed;left:var(--pad-left);right:var(--pad-right);bottom:calc(var(--pad-bottom) + 210px);display:flex;gap:7px;padding:0;border:0;pointer-events:none}
-  .action-row button{min-height:44px;padding:0 8px;border:1px solid #9fbfc733;border-radius:22px;background:#0b1d29d9;color:#c0d3d8;font-size:10px;display:flex;align-items:center;justify-content:center;gap:4px;pointer-events:auto}
-  .action-row button.on{border-color:#a4f5ce77;background:#173b31e6;color:var(--mint)}
-  .action-row button kbd{display:none}.action-row i{margin-left:0;flex:none}
-  #maneuverToggle span{font-size:16px;transition:transform .15s}
-  #maneuverToggle[aria-expanded="true"]{border-color:#a4f5ce99;color:var(--mint)}
-  #maneuverToggle[aria-expanded="true"] span{transform:rotate(180deg)}
-  .speed{position:fixed;bottom:calc(var(--pad-bottom) + 155px);left:var(--pad-left);min-width:0;pointer-events:none}
-  .speed>span{display:none}.speed b{font-size:40px;letter-spacing:-2px;line-height:1}.speed>div{gap:7px}.speed>div>span{font-size:8px}
-  .speed small{font-size:8px;letter-spacing:0}.speed i{margin:0 3px}
-  .flight-controls{position:fixed;right:var(--pad-right);bottom:var(--pad-bottom);display:flex;flex-direction:column;align-items:center;gap:12px;min-width:0;width:var(--boost-size);pointer-events:none}
-  .flight-controls>button:not(.pause){flex:none;min-width:0;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;border-width:2px;pointer-events:auto;box-shadow:0 5px 18px #0006,inset 0 0 0 5px #ffffff06;isolation:isolate}
-  .flight-controls>button:not(.pause)::after{content:"";position:absolute;inset:5px;border:1px solid #d7fff214;border-radius:50%;pointer-events:none}
-  .flight-controls>button:not(.pause) kbd,.flight-controls .desktop-label{display:none}
-  .flight-controls .mobile-label{display:block}
-  .flight-controls>button:not(.pause) .control-symbol{width:24px;height:24px;margin:0}
-  .flight-controls span{font-size:14px;font-weight:600;letter-spacing:1px}
-  .flight-controls small.mobile-label{font-size:8px;letter-spacing:.5px;font-weight:400;color:#b1d4c4}
-  #liftBtn{order:0;width:var(--jump-size);height:var(--jump-size);background:linear-gradient(145deg,#3c6179e8,#112d43eb)}
-  #boostBtn{order:1;width:var(--boost-size);height:var(--boost-size);background:linear-gradient(145deg,#426e53ed,#163e30eb)}
-  #boostBtn .control-symbol{width:29px;height:29px}
-  .flight-controls>button:not(.pause).pressed{box-shadow:0 0 0 5px #a4f5ce18,0 0 28px #a4f5ce40,inset 0 0 22px #c6ffe22b;background:#4f9264f5}
-  #liftBtn.pressed{background:#457fa7f5;box-shadow:0 0 0 5px #97c9ff18,0 0 28px #97c9ff40,inset 0 0 22px #d0eaff2b}
-  .flight-controls .pause{position:fixed;top:calc(9px + env(safe-area-inset-top));right:var(--pad-right);bottom:auto;width:44px;height:44px;min-width:44px;border:1px solid #a4c5cb33;border-radius:50%;padding:0;background:#0b1c29c9;font-size:0;pointer-events:auto}
-  .flight-controls .pause::before{content:"Ⅱ";font-size:20px;color:#d1e0e5}.flight-controls .pause kbd{display:none}
-  .touch-drive{position:fixed;left:var(--pad-left);bottom:calc(var(--pad-bottom) + 30px);display:flex;gap:12px;pointer-events:none}
-  .touch-drive button{pointer-events:auto;width:64px;height:64px;min-width:64px;padding:0;border:1.5px solid #adcbd766;border-radius:50%;background:linear-gradient(145deg,#264251d9,#102331e6);font-size:21px;box-shadow:0 4px 16px #0003,inset 0 0 0 4px #ffffff04}
-  .flight-controls>button.touch-brake{position:absolute;right:calc(100% + 12px);bottom:0;min-width:0;width:var(--boost-size);height:var(--boost-size);font-size:12px;color:#efc7b5;border-color:#dcb09b77;background:linear-gradient(145deg,#624439e8,#332a2beb)}
-  .touch-drive button.pressed{background:#386556ed;color:#dbfff0;box-shadow:0 0 0 4px #a4f5ce16;border-color:var(--mint)}
-  .flight-controls>button.touch-brake.pressed{background:#915d4ef0;color:#fff0dc;border-color:#efbb9e;box-shadow:0 0 0 4px #efbb9e18,0 0 20px #efbb9e22}
-  .maneuvers{display:none;position:fixed;top:auto;bottom:calc(var(--pad-bottom) + 265px);left:var(--pad-left);right:var(--pad-right);width:auto;padding:13px;background:#0b1c28f0;border:1px solid #9dbcc74d;border-radius:18px;z-index:12}
-  .maneuvers-open .maneuvers{display:block}.maneuvers>span{font-size:8px}.maneuvers>div{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:11px}
-  .maneuvers button{min-height:48px;padding:6px 2px;font-size:11px;border-radius:13px}.maneuvers kbd{display:none}.maneuvers small{font-size:9px;margin-top:10px}
-  .bottom-hint{display:none}
-  #message{top:calc(206px + env(safe-area-inset-top));max-width:88%;font-size:11px;letter-spacing:.5px;white-space:normal;width:max-content;border-radius:12px}
-  #countdown{top:34%;font-size:80px}
-  .controls-list{grid-template-columns:1fr 1fr}
-  .panel{border-radius:20px;touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-}
-
-/* Landscape phones keep the main buttons beside the road, not over it. */
-@media(orientation:landscape) and (max-height:600px) and (max-width:900px),(orientation:landscape) and (max-height:600px) and (pointer:coarse){
-  :root{--pad-bottom:calc(clamp(36px,11vh,56px) + env(safe-area-inset-bottom));--boost-size:76px;--jump-size:76px}
-  .racing header{height:48px;padding-top:4px}.racing .brand small{display:none}
-  header{height:54px;padding:12px 4.5%}.hero{top:62px}.hero h1{font-size:43px;margin:10px 0;letter-spacing:-2px}.hero p,.hero-tag{display:none}.hero .eyebrow{font-size:7px;letter-spacing:1px}
-  .menu-bottom{bottom:30px;left:4.5%;right:4.5%}.section-label{font-size:8px;margin-bottom:7px}.section-label span:last-child{font-size:6px}.maps{gap:10px}.map-info{display:flex;padding:10px 12px;gap:10px}.map-index{margin:0}.map h3{font-size:13px}.map p{font-size:6px;margin-top:5px}.map-meta{display:none}.launch-help{display:none}.launch-row{justify-content:flex-end;margin-top:8px}.launch-row .primary{width:auto;min-width:170px;padding:10px 20px}.primary span{font-size:17px}footer{bottom:10px;font-size:6px}footer span:nth-child(2){display:none}
-  .racing .run-top{top:calc(53px + env(safe-area-inset-top));left:var(--pad-left);right:var(--pad-right);grid-template-columns:185px 1fr 110px}
-  .run-top .time{position:fixed;top:17px;left:53%;width:90px}.run-top .time small{display:none}
-  .run-top .score{position:fixed;top:60px;right:var(--pad-right)}
-  .resources{top:calc(112px + env(safe-area-inset-top));right:auto;width:205px;padding:8px 11px 0;gap:12px}
-  .resource>div:first-child{font-size:8px}.resource b{font-size:14px}
-  .action-row{left:50%;right:auto;transform:translateX(-50%);bottom:var(--pad-bottom);width:min(290px,calc(100vw - 352px))}
-  .action-row button{min-height:44px;padding:0 7px;font-size:9px}
-  .speed{top:12px;bottom:auto;left:32%;min-width:90px}.speed b{font-size:32px}.speed small{font-size:7px}.speed>div>span{font-size:8px}
-  .flight-controls{gap:10px}
-  .flight-controls span{font-size:12px}.flight-controls>button:not(.pause) .control-symbol{width:21px;height:21px}
-  .touch-drive button{width:60px;height:60px;min-width:60px}.flight-controls>button.touch-brake{bottom:0;width:var(--boost-size);height:var(--boost-size);min-width:0}
-  .maneuvers{left:50%;right:auto;transform:translateX(-50%);bottom:calc(var(--pad-bottom) + 55px);width:310px}
-  #message{top:105px;max-width:46%;font-size:10px}
-  #countdown{top:25%;font-size:70px}
-}
-@media(max-width:360px){:root{--pad-left:12px;--pad-right:12px;--boost-size:84px;--jump-size:70px}.action-row{gap:5px}.action-row button{font-size:9px;padding:0 5px}.touch-drive{gap:10px}.touch-drive button{width:60px;height:60px;min-width:60px}.flight-controls>button.touch-brake{right:calc(100% + 12px)}}
-@media(prefers-reduced-motion:reduce){.flight-controls>button,#maneuverToggle span{transition:none}}
-
-@media(orientation:landscape) and (max-width:650px){.speed{left:35%;top:10px}.speed b{font-size:28px}.speed small{font-size:6px}.run-top .time{left:55%;top:15px;width:80px}.time b{font-size:18px}.action-row{gap:4px}.action-row button{font-size:8px;padding:0 3px}.hero h1{font-size:37px}.hero .eyebrow{font-size:6px}.map-info{padding:8px}.map h3{font-size:11px}.racing .brand span{font-size:10px}.racing .brand svg{width:20px}.resources{width:182px;padding:8px 9px 0}.racing .run-top{grid-template-columns:182px 1fr 90px}}
-
-@media(max-width:900px),(pointer:coarse){
-  .touch-drive{left:calc(var(--pad-left) + 8px);bottom:calc(var(--pad-bottom) + 14px)}
-  .steering-pad{position:relative;display:block;width:112px;height:112px;touch-action:none;-webkit-touch-callout:none;border:1px solid #a2c8d14d;border-radius:50%;background:radial-gradient(circle,#213e4a77 0 37%,#0b1b2877 38% 65%,#9cbcca12 66%);box-shadow:inset 0 0 0 7px #cadde707,0 8px 20px #0003;pointer-events:auto}
-  .stick-knob{position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%) translateX(var(--stick-x,0px));border:1.5px solid #c6e3e788;border-radius:50%;background:linear-gradient(145deg,#63828cdb,#2b4858eb);box-shadow:0 4px 12px #0005,inset 0 0 0 4px #d8ffff0b;pointer-events:none}
-  .steering-pad.pressed{border-color:#a4f5ce88;box-shadow:0 0 22px #a4f5ce18}.steering-pad.pressed .stick-knob{border-color:var(--mint);background:linear-gradient(145deg,#75ae95,#315c51)}
-  .stick-arrow{position:absolute;top:50%;transform:translateY(-50%);font-size:25px;color:#afccd46b;pointer-events:none}.stick-arrow.left{left:12px}.stick-arrow.right{right:12px}
-  .steering-pad small{position:absolute;bottom:-19px;width:100%;text-align:center;letter-spacing:3px;font-size:8px;color:#a8c0c580;pointer-events:none}
-  #boostBtn .control-symbol{width:24px;height:24px}.flight-controls small.mobile-label{font-size:7px}
-}
-@media(orientation:landscape) and (max-width:650px){
-  :root{--boost-size:64px;--jump-size:64px}
-  .steering-pad{width:104px;height:104px}.flight-controls>button:not(.pause) .control-symbol{width:21px;height:21px}.flight-controls span{font-size:11px}
-}
-@media(orientation:landscape) and (max-width:550px){.action-row{width:124px;display:grid;grid-template-columns:1fr 1fr;gap:6px}.action-row button{min-width:0;font-size:8px}.touch-drive{left:var(--pad-left)}.steering-pad{width:94px;height:94px}.resources{top:104px}.maneuvers{width:270px;bottom:calc(var(--pad-bottom) + 100px)}}
-
-/* Endless driving: status stays above the road; thumb controls retain their grip space. */
-#healthBar{background:linear-gradient(90deg,#f19d89,#ffcbb4)}
-#trackStatus{display:inline-block;margin-left:14px;color:#91adaf;font-size:10px;letter-spacing:1px}
-#trackStatus.warning{color:#d5bdff}
-#trickHud{position:fixed;left:50%;bottom:158px;transform:translateX(-50%);width:230px;text-align:center;pointer-events:none;color:#94b0b9;font-size:11px;letter-spacing:1px}
-#trickHud>div{height:3px;background:#a7c4c51f;border-radius:4px;margin:9px auto 0;overflow:hidden}
+/* The driving UI is anchored to the edges. The middle is reserved for the road. */
+:root{--control:80px;--control-gap:12px;--control-bottom:48px;--hud-edge:4.5%;--hud-top:106px}
+.control-symbol{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.flip-symbol{transform:scaleX(-1)}
+#hud .flight-controls{position:fixed;right:var(--hud-edge);bottom:var(--control-bottom);display:grid;grid-template-columns:repeat(2,var(--control));grid-template-areas:"grip jump" "brake boost";gap:var(--control-gap);width:calc(var(--control)*2 + var(--control-gap));min-width:0;pointer-events:none;z-index:4}
+#hud .control-button{--accent:#bfd7df;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:var(--control);height:var(--control);min-width:0;padding:0;border-radius:50%;border:1px solid color-mix(in srgb,var(--accent) 48%,transparent);color:var(--accent);background:radial-gradient(circle at 35% 20%,#324753d9,#0e1e2be8 75%);box-shadow:inset 0 0 0 5px #d0e7f006,0 4px 16px #0003;touch-action:none;-webkit-touch-callout:none;pointer-events:auto;transition:background .12s,box-shadow .12s,opacity .12s}
+#hud .control-button::after{content:"";position:absolute;inset:5px;border:1px solid #d5edff0c;border-radius:50%;pointer-events:none}
+#hud .control-button span{font-size:12px;line-height:16px;font-weight:600;letter-spacing:1px}
+#hud .control-button small{display:block;font-size:8px;line-height:11px;color:inherit;opacity:.7;letter-spacing:.3px}
+#hud .control-button kbd{position:absolute;top:-2px;right:-2px;min-width:20px;padding:3px 4px;background:#14232e;border:1px solid #a5c6d73d;font-size:7px;border-radius:5px;letter-spacing:.5px;pointer-events:none}
+#hud .control-button:active,#hud .control-button.pressed,#hud .control-button.active{background:radial-gradient(circle at 35% 20%,#608575e8,#21483bdc);border-color:var(--accent);box-shadow:inset 0 0 0 5px #d0e7f010,0 0 0 3px #c8e9ff0a,0 0 22px #b9e1ff1f}
+#hud .control-button:disabled,#hud .control-button.unavailable{opacity:.43}
+#hud .control-button:disabled{cursor:default;filter:none}
+#hud .stunt.active:disabled{opacity:1}
+#hud .grip{grid-area:grip;--accent:#cab5ff}
+#hud .jump{grid-area:jump;--accent:#afd7ff}
+#hud .brake{grid-area:brake;--accent:#f0baa5}
+#hud .boost{grid-area:boost;--accent:#a4f5ce}
+#hud .stunt{--accent:#e0ceff}
+#hud .boost .control-symbol{fill:currentColor;stroke:none}
+#hud .grip.on{border-color:#d6c2ff;background:radial-gradient(circle at 35% 20%,#665485e8,#302342e8);box-shadow:inset 0 0 0 5px #c1a5ff12,0 0 18px #c5a2ff22}
+#hud .grip.needed:not(.on){border-color:#eac78e;box-shadow:0 0 0 3px #eac78e20}
+.state-dot{position:absolute;top:11px;right:12px;width:5px;height:5px;background:#665d7a;border-radius:50%}
+.on .state-dot{background:#dfcfff;box-shadow:0 0 7px #e4ceff}
+#hud .air-controls{position:absolute;left:0;bottom:calc(100% + var(--control-gap));display:grid;grid-template-columns:repeat(2,var(--control));gap:var(--control-gap);pointer-events:none}
+#hud .pause{position:fixed;right:var(--hud-edge);top:22px;display:flex;align-items:center;justify-content:center;width:42px;height:42px;min-width:0;padding:0;border:1px solid #bad0df40;border-radius:50%;color:#d0e0e7;background:#10202d99;z-index:11;touch-action:none}
+#hud .pause svg{width:19px;height:19px;stroke:currentColor;stroke-width:2;fill:none}
+#hud .pause kbd{position:absolute;bottom:-16px;font-size:7px;border:0;background:none;padding:0;opacity:.6}
+.racing #settingsBtn{display:none}.racing #soundBtn{position:fixed;right:calc(var(--hud-edge) + 52px);top:22px;width:42px;height:42px;padding:0;font-size:20px}
+.racing header{pointer-events:none}.racing header button{pointer-events:auto}
+#hud .telemetry{position:fixed;left:var(--hud-edge);top:var(--hud-top);width:236px;pointer-events:none;z-index:2}
+.route-label{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;color:#a7bbc6;font-size:10px;letter-spacing:1px}
+.route-label b{font:10px monospace;letter-spacing:.3px;white-space:nowrap;color:#e4efef}
+#hud .resources{position:static;display:grid;grid-template-columns:1fr 1fr;gap:17px;width:100%;max-width:none;padding:12px 13px 10px;border:1px solid #b6cbd61c;border-radius:12px;background:linear-gradient(120deg,#122330b8,#0917229e);backdrop-filter:none}
+#hud .resource>div{font-size:10px;gap:8px}
+#hud .resource b{font:18px monospace;line-height:20px}
+#hud .resource b span{font-size:8px;margin-left:2px}
+#hud .bar{height:3px;margin:8px 0 0;background:#53667455;border-radius:4px;overflow:hidden}
+#healthBar{background:linear-gradient(90deg,#e59887,#ffd0b2)}
+#trackStatus{height:18px;margin-top:9px;color:#93aab8;font-size:10px;line-height:18px;white-space:nowrap;letter-spacing:.3px}
+#trackStatus.warning{color:#edcd98}
+#hud #message{position:static;top:auto;left:auto;transform:none;width:100%;max-width:none;height:19px;line-height:19px;margin:2px 0 0;padding:0;border:0;background:none;text-align:left;font-size:10px;letter-spacing:.2px;color:#c4e8d9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+#trickHud{width:100%;margin-top:4px;color:#aed4ef;font-size:10px;line-height:17px;opacity:0;transition:opacity .15s}
+#trickHud.visible{opacity:1}
+#trickHud>div{height:2px;background:#a7c4c51f;border-radius:4px;margin:4px 0 0;overflow:hidden}
 #trickFill{display:block;width:0;height:100%;background:#9cd8ff;transition:width .1s}
-#trickHud.charged{color:#b8e8ff}#trickHud[data-tier="1"]{color:#ffd197}#trickHud[data-tier="2"]{color:#d7b0ff}
+#trickHud[data-tier="1"]{color:#ffd197}#trickHud[data-tier="2"]{color:#d7b0ff}
 #trickHud[data-tier="1"] #trickFill{background:#ffc17c}#trickHud[data-tier="2"] #trickFill{background:#c490ff}
+#hud .drive-readout{position:fixed;top:28px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:32px;pointer-events:none}
+#hud .speed{position:static;min-width:100px}
+#hud .speed>div{gap:7px}
+#hud .speed b{font-size:42px;line-height:42px;letter-spacing:-2px}
+#hud .speed>div>span{font-size:8px}
+#hud .speed small{display:block;font:8px monospace;color:#8099a8;line-height:15px;letter-spacing:.3px;white-space:nowrap}
+#hud .speed i{margin:0 3px;color:#587784}
+#hud .time{gap:5px;text-align:left}
+#hud .time small{font-size:7px;letter-spacing:2px;color:#7b97a4}
+#hud .time b{font-size:24px;letter-spacing:.5px;line-height:26px}
+#hud .score{position:fixed;top:var(--hud-top);right:var(--hud-edge);gap:3px;pointer-events:none}
+#hud .score small{font-size:8px;letter-spacing:2px;color:#849ea9}
+#hud .score b{font-size:26px;line-height:28px;letter-spacing:1px}
+#hud .score span{font-size:9px;color:#9bbab6}
+#hud #minimap{right:var(--hud-edge);top:188px;width:88px;height:100px;opacity:.45;pointer-events:none}
+#hud .bottom-hint{position:fixed;bottom:18px;left:var(--hud-edge);width:auto;text-align:left;font-size:8px;letter-spacing:.5px;color:#708c98;pointer-events:none}
+#hud .bottom-hint span{padding:0;margin-right:18px;color:inherit}
+#hud .touch-drive{display:none}
 .result-score small{font-size:12px;color:#9bb2ba;font-weight:400;letter-spacing:1px}
 @media(max-width:900px),(pointer:coarse){
- #trackStatus{display:block;margin:5px 0 0;font-size:8px;letter-spacing:.3px}
- .action-row{width:174px;gap:8px}.action-row button{flex:1;min-width:0}
- #trickHud{width:185px;bottom:calc(var(--pad-bottom) + 61px);font-size:9px;letter-spacing:.3px}
- #trickHud>div{margin-top:7px}
- .flight-controls>button.touch-brake small{color:#efc7b5;font-size:7px}
- .maneuvers{bottom:calc(var(--pad-bottom) + 98px)}
+ :root{--control:72px;--control-gap:12px;--control-bottom:calc(clamp(36px,11vh,52px) + env(safe-area-inset-bottom));--hud-edge:max(22px,env(safe-area-inset-left),env(safe-area-inset-right));--hud-top:60px}
+ .racing{overscroll-behavior:none}
+ .racing header{height:44px;top:env(safe-area-inset-top);padding:10px var(--hud-edge)}
+ .racing .brand svg{width:23px;height:23px}.racing .brand{gap:9px}.racing .brand span{font-size:11px;letter-spacing:2px}.racing .brand small{display:none}
+ .racing #soundBtn{top:10px;right:calc(var(--hud-edge) + 48px);width:36px;height:36px;font-size:18px}
+ #hud .pause{top:10px;width:36px;height:36px}#hud .pause kbd{display:none}
+ #hud .control-button kbd{display:none}
+ #hud .control-button .control-symbol{width:22px;height:22px}
+ #hud .control-button span{font-size:12px;line-height:15px}
+ #hud .control-button small{font-size:7px;line-height:10px}
+ #hud .telemetry{width:202px}
+ .route-label{font-size:8px;letter-spacing:.5px;margin-bottom:7px}.route-label b{font-size:8px}
+ #hud .resources{gap:14px;padding:8px 10px 9px;border-radius:10px}
+ #hud .resource>div{font-size:8px;gap:5px}#hud .resource b{font-size:15px;line-height:17px}#hud .resource b span{font-size:7px}
+ #hud .bar{height:2px;margin-top:6px}
+ #trackStatus{font-size:8px;line-height:14px;height:14px;margin-top:6px}
+ #hud #message{font-size:8px;line-height:14px;height:14px;margin-top:0}
+ #trickHud{font-size:8px;line-height:12px;margin-top:2px}#trickHud>div{margin-top:3px}
+ #hud .drive-readout{top:12px;gap:24px;left:49%}
+ #hud .speed{min-width:78px}#hud .speed b{font-size:30px;line-height:31px;letter-spacing:-1.5px}
+ #hud .speed>div>span{font-size:7px}#hud .speed small{font-size:6px;line-height:10px;letter-spacing:0}
+ #hud .time{gap:3px}#hud .time small{font-size:6px;letter-spacing:1.5px}#hud .time b{font-size:20px;line-height:22px}
+ #hud .score{top:10px;right:calc(var(--hud-edge) + 100px);gap:2px}#hud .score small{font-size:6px}#hud .score b{font-size:23px;line-height:24px}#hud .score span{font-size:8px}
+ #hud #minimap,#hud .bottom-hint{display:none}
+ #hud .touch-drive{position:fixed;left:calc(var(--hud-edge) + 6px);bottom:calc(var(--control-bottom) + 12px);display:block;pointer-events:none}
+ .steering-pad{position:relative;display:block;width:112px;height:112px;touch-action:none;-webkit-touch-callout:none;border:1px solid #aecbd04a;border-radius:50%;background:radial-gradient(circle,#2b455455 0 37%,#0e1f2966 38% 64%,#b2cdda0a 65%);box-shadow:inset 0 0 0 7px #cadde704,0 4px 16px #0002;pointer-events:auto}
+ .stick-knob{position:absolute;left:50%;top:50%;width:45px;height:45px;transform:translate(-50%,-50%) translateX(var(--stick-x,0px));border:1px solid #c0dbe587;border-radius:50%;background:linear-gradient(145deg,#587789cf,#2a4659e0);box-shadow:inset 0 0 0 4px #d8ffff08,0 3px 10px #0004;pointer-events:none}
+ .steering-pad.pressed{border-color:#c4f9de88}.steering-pad.pressed .stick-knob{background:linear-gradient(145deg,#74a48f,#315c51);border-color:#b4f7d1}
+ .stick-arrow{position:absolute;top:50%;transform:translateY(-50%);font-size:24px;color:#afccd456;pointer-events:none}.stick-arrow.left{left:12px}.stick-arrow.right{right:12px}
+ .steering-pad small{position:absolute;bottom:-18px;width:100%;text-align:center;font-size:8px;letter-spacing:3px;color:#abc4cb80;pointer-events:none}
+ #countdown{top:30%;font-size:68px}
+ .panel{border-radius:18px;touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
  .result-score{font-size:44px}.result-stats b{font-size:18px}
 }
-@media(orientation:landscape) and (max-width:650px){
- .action-row{width:140px;gap:6px}#trickHud{width:146px;font-size:8px}#trackStatus{font-size:7px}
+@media(orientation:landscape) and (max-width:650px),(orientation:landscape) and (max-height:360px) and (max-width:900px),(orientation:landscape) and (max-height:360px) and (pointer:coarse){
+ :root{--control:64px;--control-gap:10px;--hud-edge:max(18px,env(safe-area-inset-left),env(safe-area-inset-right));--hud-top:55px}
+ #hud .telemetry{width:174px}.route-label{font-size:7px;margin-bottom:5px}.route-label b{font-size:7px}
+ #hud .resources{gap:10px;padding:7px 9px 8px}#hud .resource>div{font-size:7px}#hud .resource b{font-size:13px;line-height:15px}
+ #trackStatus,#hud #message{font-size:7px;line-height:12px;height:12px}#trickHud{font-size:7px;line-height:11px}
+ #hud .drive-readout{left:46%;top:11px;gap:13px}#hud .speed{min-width:62px}#hud .speed b{font-size:27px;line-height:28px}#hud .speed small{font-size:5px}
+ #hud .time b{font-size:16px;line-height:19px}#hud .time small{font-size:5px}
+ #hud .score{top:10px;right:calc(var(--hud-edge) + 87px);gap:1px}#hud .score small{font-size:5px;letter-spacing:1px}#hud .score b{font-size:18px;line-height:20px}#hud .score span{font-size:6px}
+ #hud .control-button .control-symbol{width:20px;height:20px}#hud .control-button span{font-size:11px;line-height:13px}#hud .control-button small{font-size:6px;line-height:9px}
+ .state-dot{top:9px;right:10px;width:4px;height:4px}
+ .steering-pad{width:104px;height:104px}.stick-knob{width:42px;height:42px}
+ .racing .brand span{font-size:9px;letter-spacing:1.5px}.racing .brand svg{width:20px}
 }
-
-@media(min-width:901px) and (pointer:fine){
- .resources{position:fixed;left:4.5%;top:167px;bottom:auto;width:270px;min-width:0;padding:16px 18px 10px;border:1px solid #aac7ce22;border-radius:14px;background:#09151dc4}
- .resources .resource>div:first-child{font-size:10px}.resources .resource b{font-size:19px}.resources .resource small{display:block;font-size:8px;margin:5px 0 0}.resources .bar{margin:10px 0 14px;height:3px}
- .resources .action-row{margin-top:0}.resources .action-row button{font-size:10px}
- #trickHud{top:168px;bottom:auto}
+@media(orientation:landscape) and (max-width:550px){#hud .time{display:none}#hud .drive-readout{left:47%}.steering-pad{width:96px;height:96px}}
+/* Menu remains usable in the same landscape viewport. */
+@media(orientation:landscape) and (max-height:600px) and (max-width:900px),(orientation:landscape) and (max-height:600px) and (pointer:coarse){
+ header{height:54px;padding:12px 4.5%}.hero{top:62px}.hero h1{font-size:43px;margin:10px 0;letter-spacing:-2px}.hero p,.hero-tag{display:none}.hero .eyebrow{font-size:7px;letter-spacing:1px}
+ .menu-bottom{bottom:30px;left:4.5%;right:4.5%}.section-label{font-size:8px;margin-bottom:7px}.section-label span:last-child{font-size:6px}.maps{gap:10px}.map-info{display:flex;padding:10px 12px;gap:10px}.map-index{margin:0}.map h3{font-size:13px}.map p{font-size:6px;margin-top:5px}.map-meta{display:none}.launch-help{display:none}.launch-row{justify-content:flex-end;margin-top:8px}.launch-row .primary{width:auto;min-width:170px;padding:10px 20px}.primary span{font-size:17px}footer{bottom:10px;font-size:6px}footer span:nth-child(2){display:none}
 }
-@media(max-width:900px),(pointer:coarse){#trickHud{top:63px;bottom:auto;width:170px}#trickHud>div{margin-top:6px}}
-@media(orientation:landscape) and (max-width:650px){#trickHud{left:54%;top:56px;width:140px;font-size:7px}}
+@media(orientation:landscape) and (max-width:650px){.hero h1{font-size:37px}.hero .eyebrow{font-size:6px}.map-info{padding:8px}.map h3{font-size:11px}}
+@media(prefers-reduced-motion:reduce){#hud .control-button,#trickHud{transition:none}}

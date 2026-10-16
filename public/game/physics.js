@@ -21,12 +21,26 @@ export function gapAt(s,m){if(s<=0)return false;const cycle=Math.floor(s/m.lengt
 export function gapsInRange(m,from,to){const out=[];for(let k=Math.max(0,Math.floor(from/m.length));k<=Math.floor(to/m.length);k++)for(const [a,b]of m.gaps){const x=a+k*m.length,y=b+k*m.length;if(y>=from&&x<to&&gapAllowed(x,y))out.push([x,y]);}return out;}
 export function stats(p){return {distance:p.s,time:p.time,rings:p.rings,collisions:p.collisions,landings:p.landings,driftMeters:p.driftMeters,drifts:p.drifts,rolls:p.rolls,nearMisses:p.nearMisses,gripSections:p.gripSections,comboBonus:p.comboBonus};}
 export function score(p){return calculateScore(stats(p));}
-export function fresh(m){return {s:0,x:0,v:0,vx:0,y:height(0,m),vy:0,health:100,air:100,time:0,rings:0,landings:0,collisions:0,suction:false,boost:false,lift:false,grounded:true,airtime:0,invuln:0,failed:false,reason:'',side:0,roll:0,rollRate:0,rolls:0,pendingRolls:0,rollMark:0,rolling:false,drifting:false,driftTime:0,driftRun:0,driftTier:-1,driftMeters:0,drifts:0,miniTurbo:0,combo:0,comboTime:0,comboBonus:0,nearMisses:0,gripSections:0,gripRun:null,gripClean:false,detached:0,event:null,eventId:0};}
+export function fresh(m){return {s:0,x:0,v:0,vx:0,y:height(0,m),vy:0,health:100,air:100,time:0,rings:0,landings:0,collisions:0,suction:false,boost:false,lift:false,grounded:true,airtime:0,invuln:0,failed:false,reason:'',side:0,roll:0,rollRate:0,rolls:0,pendingRolls:0,rollMark:0,rolling:false,autoRoll:0,autoRollTime:0,autoRollFrom:0,drifting:false,driftTime:0,driftRun:0,driftTier:-1,driftMeters:0,drifts:0,miniTurbo:0,combo:0,comboTime:0,comboBonus:0,nearMisses:0,gripSections:0,gripRun:null,gripClean:false,detached:0,event:null,eventId:0};}
+export const TAP_ROLL={duration:1.25,air:10};
+export function rollAvailability(p,m){
+ if(p.failed||p.grounded)return 'ground';
+ if(p.suction||gripSection(p.s))return 'grip';
+ if(p.autoRoll||Math.abs(Math.atan2(Math.sin(p.roll),Math.cos(p.roll)))>.15||Math.abs(p.rollRate)>.5)return 'busy';
+ if(p.air<TAP_ROLL.air)return 'air';
+ const alt=Math.max(0,p.y-height(p.s,m));
+ const flightTime=(p.vy+Math.sqrt(p.vy*p.vy+2*m.gravity*alt))/m.gravity;
+ return flightTime<TAP_ROLL.duration+.15?'low':null;
+}
+export function requestRoll(p,direction,m){
+ if(![-1,1].includes(direction)||rollAvailability(p,m))return false;
+ p.air-=TAP_ROLL.air;p.autoRoll=direction;p.autoRollTime=0;p.autoRollFrom=p.roll;p.rolling=true;return true;
+}
 function award(p,message){p.combo=p.comboTime>0?Math.min(5,p.combo+1):1;p.comboTime=5;p.comboBonus+=(p.combo-1)*100;p.event={id:++p.eventId,message};}
 export function collectRing(p){if(p.failed)return;p.rings++;p.air=clamp(p.air+AIR.ring,0,100);award(p,'穿环 +150 · 气压 +25%');}
 export function nearMiss(p){p.nearMisses++;award(p,'极限擦身 +250');}
 function resetDrift(p){p.drifting=false;p.driftTime=0;p.driftRun=0;p.driftTier=-1;}
-export function damage(p,amount=25){if(p.failed||p.invuln>0)return false;p.health=Math.max(0,p.health-amount);p.collisions++;p.v*=.55;p.invuln=1.15;p.combo=0;p.comboTime=0;p.pendingRolls=0;p.gripClean=false;resetDrift(p);if(p.health===0){p.failed=true;p.reason='health';}return true;}
+export function damage(p,amount=25){if(p.failed||p.invuln>0)return false;p.health=Math.max(0,p.health-amount);p.collisions++;p.v*=.55;p.invuln=1.15;p.combo=0;p.comboTime=0;p.pendingRolls=0;if(p.autoRoll){p.roll=Math.atan2(Math.sin(p.roll),Math.cos(p.roll));p.rollMark=0;}p.autoRoll=0;p.rolling=false;p.gripClean=false;resetDrift(p);if(p.health===0){p.failed=true;p.reason='health';}return true;}
 function endDrift(p,clean){if(clean&&p.driftTier>=0){const tier=DRIFT_TIERS[p.driftTier];p.driftMeters+=p.driftRun;p.drifts++;p.air=clamp(p.air+tier.air,0,100);p.miniTurbo=tier.turbo;award(p,tier.name+' +'+Math.floor(p.driftRun*4)+' · 气压 +'+tier.air+'%');}resetDrift(p);}
 export function step(p,input,dt,m){
  if(p.failed)return;
@@ -37,11 +51,11 @@ export function step(p,input,dt,m){
  p.boost=!!input.boost&&!brake&&p.air>.001;
  p.lift=!!input.lift&&!p.suction&&!specialRoad&&p.air>.001;
  p.side=p.air>.001?clamp(input.side||(!p.grounded?steer:0),-1,1):0;
- p.rolling=!p.grounded&&!specialRoad&&!!input.roll&&p.air>.001;
+ p.rolling=!!p.autoRoll||(!p.grounded&&!specialRoad&&!!input.roll&&p.air>.001);
  const wantDrift=brake&&Math.abs(steer)>.2&&p.v>14&&p.grounded&&!p.suction&&!gripSection(p.s)&&p.invuln===0;
  if(wantDrift){p.drifting=true;p.driftTime+=dt;p.driftRun+=p.v*dt;DRIFT_TIERS.forEach((t,i)=>{if(p.driftTime>=t.seconds&&p.driftRun>=t.distance)p.driftTier=i;});}
  else if(p.drifting)endDrift(p,p.grounded&&!gripSection(p.s)&&p.invuln===0);
- p.air=clamp(p.air-((p.boost?AIR.boost:0)+(p.lift?AIR.lift:0)+Math.abs(p.side)*AIR.side+(p.rolling?AIR.roll:0)+(p.suction?AIR.grip:0))*dt,0,100);
+ p.air=clamp(p.air-((p.boost?AIR.boost:0)+(p.lift?AIR.lift:0)+Math.abs(p.side)*AIR.side+(p.rolling&&!p.autoRoll?AIR.roll:0)+(p.suction?AIR.grip:0))*dt,0,100);
  const cruise=44+Math.min(10,p.s/1800),motor=(cruise-p.v)*.8;
  p.v=clamp(p.v+(motor+(p.boost?29:0)+(p.miniTurbo>0?30:0)-(brake?(p.drifting?14:42):0)-(p.suction?1.2:0))*dt,brake?6:0,82);
  p.s+=p.v*dt/Math.sqrt(1+slope(p.s,m)**2);
@@ -59,23 +73,29 @@ export function step(p,input,dt,m){
  if(p.grounded&&p.lift){p.grounded=false;p.vy=5.5;}
  if(p.grounded&&!onRoad)p.grounded=false;
  if(!p.grounded&&!p.detached){
+  if(p.autoRoll){
+   p.autoRollTime+=dt;const t=clamp(p.autoRollTime/TAP_ROLL.duration,0,1);
+   p.roll=p.autoRollFrom+p.autoRoll*Math.PI*2*smooth(t);p.rollRate=0;
+   if(t===1){p.pendingRolls++;p.roll=0;p.rollMark=0;p.autoRoll=0;}
+  }else{
   const target=Math.round(p.roll/(Math.PI*2))*Math.PI*2;
   const torque=p.rolling?input.roll*16:clamp((target-p.roll)*18-p.rollRate*6,-18,18);
   p.rollRate=clamp(p.rollRate+torque*dt,-4.8,4.8);p.roll+=p.rollRate*dt;
   const turns=Math.floor(Math.abs(p.roll)/(Math.PI*2));if(turns>p.rollMark){p.pendingRolls+=turns-p.rollMark;p.rollMark=turns;}
+  }
   p.vy+=((p.lift?(m.id==='orbit'?11:27):0)-m.gravity-(p.suction?m.gravity*1.2:0))*dt;p.vy=clamp(p.vy,-24,13);p.y+=p.vy*dt;p.airtime+=dt;
   if(onRoad&&previousClearance>=-.15&&p.y<=ground&&p.vy<=0&&(!needsGrip(p.s)||p.suction)){
    const angle=Math.abs(Math.atan2(Math.sin(p.roll),Math.cos(p.roll)));
    if(angle>1||Math.abs(p.vy)>19){damage(p,20);p.pendingRolls=0;}
    else if(p.airtime>.65&&p.invuln===0){p.landings++;p.rolls+=p.pendingRolls;award(p,p.pendingRolls?'翻滚 ×'+p.pendingRolls+' · 平稳落地 +'+(200+600*p.pendingRolls):'平稳落地 +200');}
-   p.roll=0;p.rollRate=0;p.rollMark=0;p.pendingRolls=0;p.y=ground;p.vy=0;p.grounded=true;p.airtime=0;
+   p.roll=0;p.rollRate=0;p.rollMark=0;p.pendingRolls=0;p.autoRoll=0;p.y=ground;p.vy=0;p.grounded=true;p.airtime=0;
   }
  }else if(p.grounded){p.y=ground;p.vy=0;}
  if(p.y>ground+22){p.y=ground+22;p.vy=Math.min(p.vy,0);}
  if(p.y<ground-3.2||Math.abs(p.x)>m.width+10){p.failed=true;p.reason='fall';}
  if(p.drifting&&!p.grounded)endDrift(p,false);
  // No finish line, elapsed-time limit, energy failure or checkpoint respawn.
- if(p.failed){p.boost=false;p.lift=false;p.side=0;p.rolling=false;resetDrift(p);}
+ if(p.failed){p.autoRoll=0;p.boost=false;p.lift=false;p.side=0;p.rolling=false;resetDrift(p);}
 }
 export function obstacles(m,from=0,to=640){const out=[];for(let i=Math.max(0,Math.ceil((from-155)/145));155+i*145<to;i++){const s=155+i*145;if(gripSection(s)||gapsInRange(m,s-60,s+60).length)continue;out.push({id:'o'+i,s,x:i%3===0?0:i%3===1?-4.6:4.6,w:i%4===0?9:4.5,h:i%4===0?1.25:2.1,d:2.6,hit:false,passed:false});}return out;}
 export function rings(m,from=0,to=640){const out=[];for(let i=Math.max(0,Math.ceil((from-75)/80));75+i*80<to;i++){const s=75+i*80;if(gapsInRange(m,s-35,s+50).length)continue;out.push({id:'r'+i,s,x:gripSection(s)?0:[0,-3,3][i%3],y:1.5,collected:false});}for(const [a,b]of gapsInRange(m,from-70,to+70))for(const [s,y]of [[a-42,1.5],[(a+b)/2,4.5]])if(s>=from&&s<to)out.push({id:'g'+s,s,x:0,y,collected:false});return out.sort((a,b)=>a.s-b.s);}
