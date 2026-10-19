@@ -74,40 +74,45 @@ export function createTouchInput(enabled = () => true) {
   };
 }
 
-// A radial two-axis stick: horizontal steering, vertical throttle/reverse.
-export function createSteeringInput(pad, enabled = () => true) {
+// Independent axes: moving farther sideways must not take away the throttle.
+export function stickAxes(dx, dy, radius) {
+  const axis = (distance, dead, travel) => Math.sign(distance) * Math.min(1, Math.max(0, (Math.abs(distance) / radius - dead) / travel));
+  return { steer: axis(dx, .16, .84), throttle: -axis(dy, .14, .56) };
+}
+
+// A floating origin lets the thumb land naturally; fixed placement is optional.
+export function createSteeringInput(pad, enabled = () => true, { zone = pad, placement = () => 'fixed' } = {}) {
   let active = null, x = 0, y = 0, origin = null;
   function move(e) {
-    // Browser bar animations must not turn a stationary thumb into steering.
     const { centerX, centerY, radius } = origin;
-    let dx = (e.clientX - centerX) / radius;
-    let dy = (e.clientY - centerY) / radius;
-    const length = Math.hypot(dx, dy), scale = length > 1 ? 1 / length : 1;
-    dx *= scale; dy *= scale;
-    // Independent dead zones stop thumb wobble becoming steering. The upper
-    // diagonal arc still reaches full throttle, so a turn doesn't lose speed.
-    x = Math.sign(dx) * Math.max(0, (Math.abs(dx) - .14) / .86);
-    y = -Math.sign(dy) * Math.min(1, Math.max(0, (Math.abs(dy) - .12) / .53));
-    pad.style.setProperty('--stick-x', (dx * radius).toFixed(1) + 'px');
-    pad.style.setProperty('--stick-y', (dy * radius).toFixed(1) + 'px');
+    const dx = e.clientX - centerX, dy = e.clientY - centerY;
+    ({ steer: x, throttle: y } = stickAxes(dx, dy, radius));
+    // Only the picture is circular. Input axes retain their full range diagonally.
+    const scale = Math.min(1, radius / (Math.hypot(dx, dy) || 1));
+    pad.style.setProperty('--stick-x', (dx * scale).toFixed(1) + 'px');
+    pad.style.setProperty('--stick-y', (dy * scale).toFixed(1) + 'px');
   }
   function release(e) {
     if (e && e.pointerId !== active) return;
     const id = active; active = null; origin = null; x = 0; y = 0;
-    pad.style.setProperty('--stick-x', '0px'); pad.style.setProperty('--stick-y', '0px'); pad.classList.toggle('pressed', false);
-    if (id !== null && pad.hasPointerCapture(id)) pad.releasePointerCapture(id);
+    for (const prop of ['--stick-x','--stick-y','--base-x','--base-y']) pad.style.setProperty(prop, '0px');
+    pad.classList.toggle('pressed', false);
+    if (id !== null && zone.hasPointerCapture(id)) zone.releasePointerCapture(id);
   }
-  pad.addEventListener('contextmenu', e => e.preventDefault());
-  pad.addEventListener('pointerdown', e => {
+  zone.addEventListener('contextmenu', e => e.preventDefault());
+  zone.addEventListener('pointerdown', e => {
     if (!enabled() || active !== null || e.button !== 0) return;
-    e.preventDefault(); active = e.pointerId; pad.setPointerCapture(active);
-    const rect = pad.getBoundingClientRect();
-    origin = {centerX:rect.left + rect.width / 2,centerY:rect.top + rect.height / 2,radius:rect.width * .30};
+    e.preventDefault(); active = e.pointerId; zone.setPointerCapture(active);
+    const rect = pad.getBoundingClientRect(), baseX = rect.left + rect.width / 2, baseY = rect.top + rect.height / 2;
+    const floating = placement() === 'floating';
+    origin = { centerX: floating ? e.clientX : baseX, centerY: floating ? e.clientY : baseY, radius: rect.width * .34 };
+    pad.style.setProperty('--base-x', (origin.centerX - baseX).toFixed(1) + 'px');
+    pad.style.setProperty('--base-y', (origin.centerY - baseY).toFixed(1) + 'px');
     pad.classList.toggle('pressed', true); move(e);
   });
-  pad.addEventListener('pointermove', e => { if (e.pointerId === active) move(e); });
-  for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) pad.addEventListener(event, release);
-  return { get value() { return x; }, get throttle() { return y; }, clear() { release(); } };
+  zone.addEventListener('pointermove', e => { if (e.pointerId === active) move(e); });
+  for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) zone.addEventListener(event, release);
+  return { get value() { return x; }, get throttle() { return y; }, get active() { return active !== null; }, clear() { release(); } };
 }
 
 // Softer small corrections, while preserving full lock in every preset.

@@ -41,7 +41,7 @@
   <button id="boostBtn" class="control-button boost" aria-label="加速，按住并上滑同时腾空"><kbd>SHIFT</kbd><svg class="control-symbol" viewBox="0 0 32 32" aria-hidden="true"><path d="m18 3-12 16h9l-1 10 12-17h-9Z"/></svg><span>加速</span><small>上滑腾空</small></button>
  </div>
  <button id="pauseBtn" class="pause" aria-label="暂停"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6v12M16 6v12"/></svg><kbd>ESC</kbd></button>
- <div class="touch-drive"><div id="steeringPad" class="steering-pad" role="group" aria-label="驾驶轮盘，上推给油下推倒车，左右转向，支持斜向"><span class="stick-label forward" aria-hidden="true">前进</span><span class="stick-label reverse" aria-hidden="true">倒车</span><span class="stick-arrow left" aria-hidden="true">‹</span><span class="stick-arrow right" aria-hidden="true">›</span><i class="stick-knob" aria-hidden="true"></i><small>斜推转弯</small></div></div>
+ <div class="touch-drive" id="steeringZone"><div id="steeringPad" class="steering-pad" role="group" aria-label="驾驶轮盘，上推给油下推倒车，左右转向，支持斜向"><span class="stick-label forward" aria-hidden="true">前进</span><span class="stick-label reverse" aria-hidden="true">倒车</span><span class="stick-arrow left" aria-hidden="true">‹</span><span class="stick-arrow right" aria-hidden="true">›</span><i class="stick-knob" aria-hidden="true"></i><small id="stickHint">按住后滑动</small></div></div>
  <div class="bottom-hint"><span>W / S 给油 · 倒车</span><span>A / D 转向 · B 刹车</span><span>Q / F 侧喷</span><span>Z / X 单圈翻滚</span><span id="fps">60</span> FPS</div>
 </section>
 <div id="modal" class="modal hidden"><div class="panel"><button id="closeModal" class="close" aria-label="关闭">×</button><div id="modalContent"></div></div></div>

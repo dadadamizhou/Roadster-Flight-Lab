@@ -92,10 +92,10 @@ export function step(p,input,dt,m){
  p.air=clamp(p.air-((p.boost?AIR.boost:0)+(p.lift?AIR.lift:0)+Math.abs(p.side)*AIR.side+(p.rolling&&!p.autoRoll?AIR.roll:0)+(p.suction?AIR.grip:0))*dt,0,100);
  // Small corrections are gentle. Releasing/countersteering responds faster
  // than winding on lock, with no reference to the road's chosen direction.
- const shaped=steer*(p.drifting?.65+.35*Math.abs(steer):.3+.7*Math.abs(steer));
+ const shaped=steer*(p.drifting?.65+.35*Math.abs(steer):.25+.75*Math.abs(steer));
  const releasing=Math.abs(shaped)<Math.abs(p.steerSmooth)||shaped*p.steerSmooth<0;
- p.steerSmooth+=(shaped-p.steerSmooth)*(1-Math.exp(-dt*(releasing?18:p.drifting?9:5.5)));
- const speed=Math.abs(p.v),yawRate=p.grounded?Math.sign(p.v)*Math.min(speed/10,1)*(p.drifting?.94:clamp(1.04-speed*.01,.40,.95)):.65;
+ p.steerSmooth+=(shaped-p.steerSmooth)*(1-Math.exp(-dt*(releasing?24:p.drifting?11:8)));
+ const speed=Math.abs(p.v),yawRate=p.grounded?Math.sign(p.v)*Math.min(speed/10,1)*(p.drifting?.88:clamp(1.08-speed*.011,.32,.95)):.65;
  p.heading=angleDelta(p.heading+p.steerSmooth*yawRate*dt,0);
  if(p.grounded){
   if(throttle*p.v<-.2)p.v=approach(p.v,0,34*Math.abs(throttle)*dt);

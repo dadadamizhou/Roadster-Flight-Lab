@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { createTouchInput, createSteeringInput, steeringResponse } from '../public/game/touch-input.js';
+import { createTouchInput, createSteeringInput, steeringResponse, stickAxes } from '../public/game/touch-input.js';
 import { fresh, step, MAPS } from '../public/game/physics.js';
 
 class Button extends EventTarget {
@@ -50,7 +50,7 @@ const pad = new Button(240);
 const sendPad=pad.send.bind(pad);pad.send=(type,id,extra={})=>sendPad(type,id,{clientY:278,...extra});
 const steering = createSteeringInput(pad, () => enabled);
 pad.send('pointerdown', 11, { clientX: 326 }); assert.equal(steering.value, 0);
-pad.send('pointermove', 11, { clientX: 338 }); assert.ok(steering.value > .3 && steering.value < .6);
+pad.send('pointermove', 11, { clientX: 338 }); assert.ok(steering.value > .2 && steering.value < .4);
 pad.send('pointerdown', 12, { clientX: 280 }); assert.ok(steering.value > 0, 'A second finger must not hijack the steering stick');
 pad.send('pointermove', 11, { clientX: 1000 }); assert.equal(steering.value, 1);
 pad.send('pointermove', 11, { clientX: 0 }); assert.equal(steering.value, -1);
@@ -62,7 +62,7 @@ enabled = true;
 pad.send('pointerdown', 15, {clientX:326, clientY:250});assert.equal(steering.value,0);assert.equal(steering.throttle,1);
 pad.send('pointermove',15,{clientX:329,clientY:250});assert.equal(steering.value,0,'small thumb wobble on full throttle stays inside steering dead zone');assert.equal(steering.throttle,1);
 pad.send('pointermove', 15, {clientX:326, clientY:310});assert.equal(steering.throttle,-1);
-pad.send('pointermove', 15, {clientX:350, clientY:254});assert(steering.value>.6&&steering.value<.7&&steering.throttle===1,'diagonal keeps full throttle with independent steering');
+pad.send('pointermove', 15, {clientX:350, clientY:254});assert(steering.value>.7&&steering.value<.8&&steering.throttle===1,'diagonal keeps full throttle with independent steering');
 pad.send('pointermove', 15, {clientX:302, clientY:302});assert(steering.value<0&&steering.throttle<0);
 pad.send('pointercancel',15);assert.equal(steering.throttle,0);assert.equal(pad.properties.get('--stick-y'),'0px');
 // Keep the first finger steering throughout: secondary touches intentionally
@@ -152,3 +152,25 @@ for(const preset of ['soft','balanced','direct']){
 assert(steeringResponse(.3,'soft')<steeringResponse(.3,'balanced'));assert(steeringResponse(.3,'direct')>steeringResponse(.3,'balanced'));
 assert.equal(steeringResponse(.4,'unknown'),.4);assert.equal(steeringResponse(NaN),0);
 console.log('Stable joystick during resize, jump gesture hysteresis, release-activated UI and steering presets passed.');
+
+// Independent motor/steering axes keep the pedal steady across the whole arc.
+for(const dx of [-150,-45,-20,0,20,45,150]) {
+ assert.equal(stickAxes(dx,-32,40).throttle,1);
+ assert.equal(stickAxes(dx,32,40).throttle,-1);
+}
+assert.equal(stickAxes(120,-32,40).steer,1);
+assert.equal(stickAxes(0,0,40).steer,0);
+const floatingPad=new Button(240),zone=new Button(220);
+let placement='floating';
+const floating=createSteeringInput(floatingPad,()=>true,{zone,placement:()=>placement});
+zone.send('pointerdown',70,{clientX:306,clientY:270});
+assert.equal(floating.value,0);assert.equal(Math.abs(floating.throttle),0,'touch anywhere starts neutral instead of jumping the steering');
+zone.send('pointermove',70,{clientX:306,clientY:244});assert.equal(floating.value,0);assert.equal(floating.throttle,1);
+zone.send('pointermove',70,{clientX:354,clientY:244});assert.equal(floating.value,1);assert.equal(floating.throttle,1);
+zone.send('pointermove',71,{clientX:280,clientY:300});assert.equal(floating.value,1,'another finger cannot move the origin');
+zone.send('pointerup',70);assert(!floating.active&&floating.value===0&&floating.throttle===0);
+zone.send('pointerdown',72,{clientX:350,clientY:290});assert.equal(floating.value,0);assert.equal(Math.abs(floating.throttle),0,'new thumb placement gets a fresh origin');
+zone.send('pointermove',72,{clientX:350,clientY:320});assert.equal(floating.throttle,-1);
+floating.clear();assert(!zone.hasPointerCapture(72));
+placement='fixed';zone.send('pointerdown',73,{clientX:326,clientY:250});assert.equal(floating.throttle,1,'fixed control remains available');floating.clear();
+console.log('Floating thumb origin, neutral touchdown, independent diagonal throttle, reverse and multi-touch ownership passed.');
