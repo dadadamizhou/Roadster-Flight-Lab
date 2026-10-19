@@ -1,11 +1,12 @@
 import * as T from './vendor/three.module.js';
 export function createCar(){
- const root=new T.Group(),wheels=[],jets=[],liftJets=[],sideJets=[];
+ const root=new T.Group(),wheels=[],frontAxles=[],jets=[],liftJets=[],sideJets=[];
  const white=new T.MeshPhysicalMaterial({color:0xe8ecee,metalness:.5,roughness:.24,clearcoat:1,clearcoatRoughness:.15});
  const carbon=new T.MeshStandardMaterial({color:0x10151a,metalness:.45,roughness:.4});
  const rubber=new T.MeshStandardMaterial({color:0x0a0d10,roughness:.92});
  const silver=new T.MeshStandardMaterial({color:0x9fa9ae,metalness:.88,roughness:.22});
  const glass=new T.MeshPhysicalMaterial({color:0x73563b,metalness:.65,roughness:.14,clearcoat:1});
+ const tailLight=new T.MeshBasicMaterial({color:0x8f2337,toneMapped:false});
  const led=new T.MeshBasicMaterial({color:0xebfff8}),red=new T.MeshBasicMaterial({color:0xff2944});
  function mesh(g,m,x=0,y=0,z=0,p=root){const o=new T.Mesh(g,m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;p.add(o);return o;}
  const box=(w,h,d,m,x,y,z,p)=>mesh(new T.BoxGeometry(w,h,d),m,x,y,z,p);
@@ -29,10 +30,10 @@ export function createCar(){
  panel([[-.94,.56,-2.485],[.94,.56,-2.485],[.95,.28,-2.47],[-.95,.28,-2.47]],carbon);
  box(1.88,.023,.021,led,0,.579,-2.49);box(1.99,.045,.17,carbon,0,.25,-2.45);
  for(const s of [-1,1])tube([[s*.91,.59,-2.48],[s*1.02,.70,-2.13]],.012,led);
- box(2.08,.39,.14,carbon,0,.50,2.34);box(2.06,.03,.04,red,0,.86,2.40);box(2.00,.012,.04,red,0,.81,2.40);
+ box(2.08,.39,.14,carbon,0,.50,2.34);box(2.06,.03,.04,tailLight,0,.86,2.40);box(2.00,.012,.04,tailLight,0,.81,2.40);
  for(let i=-4;i<=4;i++)box(.026,.18,.4,carbon,i*.22,.23,2.22);
  for(const s of [-1,1])for(const z of [-1.5,1.5]){
-  const wheel=new T.Group();wheel.position.set(s*1.08,.43,z);root.add(wheel);wheels.push(wheel);
+  const wheel=new T.Group();wheel.position.set(s*1.08,.43,z);if(z<0){const axle=new T.Group();axle.position.copy(wheel.position);wheel.position.set(0,0,0);axle.add(wheel);root.add(axle);frontAxles.push(axle);}else root.add(wheel);wheels.push(wheel);
   const tire=mesh(new T.CylinderGeometry(.43,.43,.23,32),rubber,0,0,0,wheel);tire.rotation.z=Math.PI/2;
   const disc=mesh(new T.CylinderGeometry(.365,.365,.012,32),carbon,s*.126,0,0,wheel);disc.rotation.z=Math.PI/2;
   const rim=mesh(new T.TorusGeometry(.36,.017,5,32),silver,s*.139,0,0,wheel);rim.rotation.y=Math.PI/2;
@@ -51,5 +52,5 @@ export function createCar(){
   const g=new T.Group();g.position.set(side*1.15,.61,z);g.rotation.z=side*Math.PI/2;root.add(g);
   const plume=mesh(new T.ConeGeometry(.10,.8,8,1,true),plumeMaterial.clone(),0,-.43,0,g);plume.rotation.z=Math.PI;g.visible=false;g.userData.side=side;sideJets.push(g);
  }
- root.userData={wheels,jets,liftJets,sideJets,wing,suction};return root;
+ root.userData={wheels,frontAxles,tailLight,jets,liftJets,sideJets,wing,suction};return root;
 }

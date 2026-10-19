@@ -10,9 +10,15 @@ const coast=structuredClone(p),slow=structuredClone(p);run(coast,{},1);run(slow,
 run(slow,{boost:true,lift:true},.5);assert(!slow.boost&&!slow.lift);assert.equal(slow.air,0);
 p=fresh(wide);run(p,{throttle:1},1,wide);run(p,{throttle:-1},.3,wide);assert(p.v>=0,'opposite throttle brakes before reversing');run(p,{throttle:-1},2,wide);assert(p.v< -10);const best=p.distance;run(p,{throttle:-1},1,wide);assert.equal(p.distance,best,'reverse never erases or farms distance score');
 p=fresh(m);const initialHeading=p.heading;run(p,{throttle:1},3);assert.equal(p.heading,initialHeading,'curves cannot turn the car automatically');const point=roadPoint(p.s,p.x,0,m);assert(Math.abs(point.x-Math.tan(initialHeading)*p.s)<.4,'straight input holds a world trajectory, not a road-centre trajectory');
-const turning=fresh(m);run(turning,{throttle:1,steer:.25},2);assert(turning.heading>initialHeading+.2,'diagonal input actually rotates the car');
-for(const [seconds,air] of [[1,8],[1.7,16],[2.5,24]]){p=fresh(wide);p.v=38;p.air=40;run(p,{throttle:1,brake:true,steer:.25},seconds,wide);assert.equal(p.air,40,'drift pays only on exit');run(p,{throttle:1},.25,wide);assert.equal(p.air,40+air);assert.equal(p.drifts,1);assert(p.miniTurbo>0&&p.driftMeters>10&&p.driftSettle>0);}
-p=fresh(wide);p.v=38;p.air=40;run(p,{throttle:1,brake:true,steer:.25},.2,wide);run(p,{throttle:1,steer:.25},.8,wide);assert(p.drifting,'a tap starts drift; throttle and steering sustain it without holding brake');run(p,{throttle:1},.3,wide);assert(!p.drifting&&p.drifts===1);
+const turning=fresh(m);run(turning,{throttle:1,steer:.25},2);assert(turning.heading>initialHeading+.1&&turning.heading<initialHeading+.25,'diagonal input actually rotates the car');
+for(const [seconds,air] of [[1,8],[1.7,16],[2.5,24]]){p=fresh(wide);p.v=38;p.air=40;run(p,{throttle:1,brake:true,steer:.55},seconds,wide);assert.equal(p.air,40,'drift pays only on exit');run(p,{throttle:1},.25,wide);assert.equal(p.air,40+air);assert.equal(p.drifts,1);assert(p.miniTurbo>0&&p.driftMeters>10&&p.driftSettle>0);}
+p=fresh(wide);p.v=36;p.air=40;run(p,{throttle:1,brake:true,steer:.55},1,wide);assert(p.drifting);step(p,{throttle:1,steer:.55},dt,wide);assert(!p.drifting&&p.drifts===1,'releasing brake ends drift even while continuing to steer and accelerate');const exitSlip=Math.abs(angleDelta(p.heading,p.travelHeading));run(p,{throttle:1},.3,wide);assert(Math.abs(angleDelta(p.heading,p.travelHeading))<exitSlip*.1,'release settles the slide promptly');
+p=fresh(wide);p.v=36;p.air=40;run(p,{brake:true,steer:.55},.15,wide);step(p,{},dt,wide);assert(!p.drifting&&p.drifts===0&&p.air===40,'short tap cannot leave drift latched or pay unearned gas');
+p=fresh(wide);run(p,{throttle:1,steer:.1},1.2,wide);assert(Math.abs(p.x)<.5,'small thumb corrections do not throw the car across a lane');
+p=fresh(wide);p.v=36;run(p,{throttle:1,steer:.65},.5,wide);const releasedHeading=p.heading;run(p,{throttle:1},.25,wide);assert(Math.abs(angleDelta(p.heading,releasedHeading))<.025,'released steering stops rotating the car promptly');assert(Math.abs(angleDelta(p.heading,p.travelHeading))<.005);
+const medium=fresh(wide),fast=fresh(wide);medium.v=30;fast.v=70;run(medium,{steer:1},.4,wide);run(fast,{steer:1},.4,wide);assert(Math.abs(fast.heading)<Math.abs(medium.heading)*.75,'high-speed steering is less abrupt');
+p=fresh(wide);run(p,{throttle:1},3,wide);assert(p.v>35&&p.v<37);run(p,{throttle:1,boost:true},1,wide);assert(p.v>48,'jets still deliver a distinct burst of speed');
+const reverseTurn=fresh(wide);reverseTurn.v=-10;run(reverseTurn,{throttle:-1,steer:.5},.6,wide);assert(reverseTurn.heading<-.1,'reverse steering remains predictable');
 p=fresh(wide);p.v=38;p.air=50;run(p,{throttle:1,brake:true,steer:.3},1,wide);damage(p);step(p,{},dt,wide);assert.equal(p.drifts,0);assert.equal(p.air,50,'collision cancels pending drift reward');
 p=fresh(wide);p.v=38;p.air=40;p.distance=1000;run(p,{throttle:1,brake:true,steer:.25},2.5,wide);run(p,{},.3,wide);assert.equal(p.drifts,0,'revisiting an old stretch cannot farm drift air or distance');
 p=fresh(m);p.air=30;run(p,{suction:true,brake:true,steer:.5},1);assert(!p.drifting);assert(Math.abs(p.air-25)<.001);collectRing(p);assert(Math.abs(p.air-50)<.001);
@@ -55,4 +61,4 @@ for(const map of Object.values(MAPS)){
  assert(obstacles(map,0,9600).every(o=>!gripSection(o.s)&&!gapsInRange(map,o.s-60,o.s+60).length));
  console.log(`${map.id}: ${Math.floor(q.s)} m, ${q.gripSections} anti-gravity sections, health ${q.health}, minimum air ${minAir.toFixed(1)}%`);
 }
-console.log('Manual throttle/reverse, independent heading, sustained drift, spatial grip recovery, actual ground impacts and endless routes passed.');
+console.log('Manual throttle/reverse, independent heading, hold-to-drift, steering comfort, spatial grip recovery, actual ground impacts and endless routes passed.');

@@ -76,9 +76,10 @@ export function createSteeringInput(pad, enabled = () => true) {
     let dy = (e.clientY - rect.top - rect.height / 2) / radius;
     const length = Math.hypot(dx, dy), scale = length > 1 ? 1 / length : 1;
     dx *= scale; dy *= scale;
-    const strength = Math.max(0, (Math.min(1, length) - .12) / .88);
-    x = length > .12 ? dx / Math.min(length, 1) * strength : 0;
-    y = length > .12 ? -dy / Math.min(length, 1) * strength : 0;
+    // Independent dead zones stop thumb wobble becoming steering. The upper
+    // diagonal arc still reaches full throttle, so a turn doesn't lose speed.
+    x = Math.sign(dx) * Math.max(0, (Math.abs(dx) - .14) / .86);
+    y = -Math.sign(dy) * Math.min(1, Math.max(0, (Math.abs(dy) - .12) / .53));
     pad.style.setProperty('--stick-x', (dx * radius).toFixed(1) + 'px');
     pad.style.setProperty('--stick-y', (dy * radius).toFixed(1) + 'px');
   }

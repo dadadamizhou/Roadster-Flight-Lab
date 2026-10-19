@@ -21,7 +21,7 @@ export function gapAt(s,m){if(s<=0)return false;const cycle=Math.floor(s/m.lengt
 export function gapsInRange(m,from,to){const out=[];for(let k=Math.max(0,Math.floor(from/m.length));k<=Math.floor(to/m.length);k++)for(const [a,b]of m.gaps){const x=a+k*m.length,y=b+k*m.length;if(y>=from&&x<to&&gapAllowed(x,y))out.push([x,y]);}return out;}
 export function stats(p){return {distance:p.distance,time:p.time,rings:p.rings,collisions:p.collisions,landings:p.landings,driftMeters:p.driftMeters,drifts:p.drifts,rolls:p.rolls,nearMisses:p.nearMisses,gripSections:p.gripSections,comboBonus:p.comboBonus};}
 export function score(p){return calculateScore(stats(p));}
-export function fresh(m){return {s:0,distance:0,heading:Math.atan(slope(0,m)),travelHeading:Math.atan(slope(0,m)),steerSmooth:0,steer:0,throttle:0,flight:null,airBank:0,recovering:false,completedGrips:new Set(),driftExit:0,driftSettle:0,x:0,v:0,vx:0,y:height(0,m),vy:0,health:100,air:100,time:0,rings:0,landings:0,collisions:0,suction:false,boost:false,lift:false,grounded:true,airtime:0,invuln:0,failed:false,reason:'',side:0,roll:0,rollRate:0,rolls:0,pendingRolls:0,rollMark:0,rolling:false,autoRoll:0,autoRollTime:0,autoRollFrom:0,drifting:false,driftTime:0,driftRun:0,driftTier:-1,driftMeters:0,drifts:0,miniTurbo:0,combo:0,comboTime:0,comboBonus:0,nearMisses:0,gripSections:0,gripRun:null,gripClean:false,event:null,eventId:0};}
+export function fresh(m){return {s:0,distance:0,heading:Math.atan(slope(0,m)),travelHeading:Math.atan(slope(0,m)),steerSmooth:0,steer:0,throttle:0,flight:null,airBank:0,recovering:false,completedGrips:new Set(),driftSettle:0,x:0,v:0,vx:0,y:height(0,m),vy:0,health:100,air:100,time:0,rings:0,landings:0,collisions:0,suction:false,boost:false,lift:false,grounded:true,airtime:0,invuln:0,failed:false,reason:'',side:0,roll:0,rollRate:0,rolls:0,pendingRolls:0,rollMark:0,rolling:false,autoRoll:0,autoRollTime:0,autoRollFrom:0,drifting:false,driftTime:0,driftRun:0,driftTier:-1,driftMeters:0,drifts:0,miniTurbo:0,combo:0,comboTime:0,comboBonus:0,nearMisses:0,gripSections:0,gripRun:null,gripClean:false,event:null,eventId:0};}
 export const TAP_ROLL={duration:1.25,air:10};
 export function rollAvailability(p,m){
  if(p.failed||p.grounded)return 'ground';
@@ -41,7 +41,7 @@ export function collectRing(p){if(p.failed)return;p.rings++;p.air=clamp(p.air+AI
 export function nearMiss(p){p.nearMisses++;award(p,'极限擦身 +250');}
 function resetDrift(p){p.drifting=false;p.driftTime=0;p.driftRun=0;p.driftTier=-1;}
 export function damage(p,amount=25){if(p.failed||p.invuln>0)return false;p.health=Math.max(0,p.health-amount);p.collisions++;p.v*=.55;if(p.flight){p.flight.velocity.x*=.55;p.flight.velocity.z*=.55;}p.invuln=1.15;p.combo=0;p.comboTime=0;p.pendingRolls=0;if(p.autoRoll){p.roll=Math.atan2(Math.sin(p.roll),Math.cos(p.roll));p.rollMark=0;}p.autoRoll=0;p.rolling=false;p.gripClean=false;resetDrift(p);if(p.health===0){p.failed=true;p.reason='health';}return true;}
-function endDrift(p,clean){if(clean&&p.driftTier>=0){const tier=DRIFT_TIERS[p.driftTier];p.driftMeters+=p.driftRun;p.drifts++;p.air=clamp(p.air+tier.air,0,100);p.miniTurbo=tier.turbo;p.driftSettle=.65;award(p,tier.name+' +'+Math.floor(p.driftRun*4)+' · 气压 +'+tier.air+'%');}resetDrift(p);}
+function endDrift(p,clean){if(clean)p.driftSettle=.35;if(clean&&p.driftTier>=0){const tier=DRIFT_TIERS[p.driftTier];p.driftMeters+=p.driftRun;p.drifts++;p.air=clamp(p.air+tier.air,0,100);p.miniTurbo=tier.turbo;award(p,tier.name+' +'+Math.floor(p.driftRun*4)+' · 气压 +'+tier.air+'%');}resetDrift(p);}
 export const angleDelta=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
 const approach=(value,target,amount)=>value<target?Math.min(target,value+amount):Math.max(target,value-amount);
 export function roadFrame(s,m){
@@ -84,24 +84,28 @@ export function step(p,input,dt,m){
  p.side=p.air>.001?clamp(input.side||(!p.grounded?steer:0),-1,1):0;
  p.rolling=!!p.autoRoll||(!p.grounded&&!section&&!!input.roll&&p.air>.001);
  const driftAllowed=p.grounded&&!p.suction&&!section&&p.v>9&&p.invuln===0;
- if(!p.drifting&&driftAllowed&&brake&&Math.abs(steer)>.18&&p.v>13){p.drifting=true;p.driftExit=0;}
+ if(!p.drifting&&driftAllowed&&brake&&Math.abs(steer)>.18&&p.v>13)p.drifting=true;
  if(p.drifting){
   if(!driftAllowed)endDrift(p,false);
-  else {p.driftExit=(!brake&&(Math.abs(steer)<.12||throttle<.1))?p.driftExit+dt:0;if(p.driftExit>.18)endDrift(p,true);}
+  else if(!brake)endDrift(p,true);
  }
  p.air=clamp(p.air-((p.boost?AIR.boost:0)+(p.lift?AIR.lift:0)+Math.abs(p.side)*AIR.side+(p.rolling&&!p.autoRoll?AIR.roll:0)+(p.suction?AIR.grip:0))*dt,0,100);
- p.steerSmooth+=(steer-p.steerSmooth)*(1-Math.exp(-dt*10));
- const speed=Math.abs(p.v),yawRate=p.grounded?Math.sign(p.v)*Math.min(speed/12,1)*(p.drifting?1.05:1.15-Math.min(speed/90,.55)):.7;
+ // Small corrections are gentle. Releasing/countersteering responds faster
+ // than winding on lock, with no reference to the road's chosen direction.
+ const shaped=steer*(p.drifting?.65+.35*Math.abs(steer):.3+.7*Math.abs(steer));
+ const releasing=Math.abs(shaped)<Math.abs(p.steerSmooth)||shaped*p.steerSmooth<0;
+ p.steerSmooth+=(shaped-p.steerSmooth)*(1-Math.exp(-dt*(releasing?18:p.drifting?9:5.5)));
+ const speed=Math.abs(p.v),yawRate=p.grounded?Math.sign(p.v)*Math.min(speed/10,1)*(p.drifting?.94:clamp(1.04-speed*.01,.40,.95)):.65;
  p.heading=angleDelta(p.heading+p.steerSmooth*yawRate*dt,0);
  if(p.grounded){
   if(throttle*p.v<-.2)p.v=approach(p.v,0,34*Math.abs(throttle)*dt);
-  else if(Math.abs(throttle)>.05&&Math.abs(p.v)<(throttle>0?50:14)*Math.abs(throttle))p.v+=throttle*(throttle>0?34:20)*(p.drifting&&brake?.35:1)*dt;
+  else if((!brake||p.drifting)&&Math.abs(throttle)>.05&&Math.abs(p.v)<(throttle>0?36:14)*Math.abs(throttle))p.v+=throttle*(throttle>0?28:20)*(p.drifting?.65:1)*dt;
   p.v=approach(p.v,0,(.8+.045*Math.abs(p.v)+.006*p.v*p.v)*dt);
-  if(brake)p.v=approach(p.v,0,(p.drifting?6:44)*dt);
+  if(brake)p.v=approach(p.v,0,(p.drifting?4:44)*dt);
   if(p.boost)p.v+=29*dt;
   if(p.miniTurbo>0&&throttle>.1&&!brake)p.v+=22*dt;
   p.v=clamp(p.v,-14,82);if(Math.abs(p.v)<.03)p.v=0;
-  const traction=p.drifting?1.8:p.driftSettle>0?4:p.suction?18:12;
+  const traction=p.drifting?2.1:p.driftSettle>0?8+14*(1-p.driftSettle/.35):p.suction?26:Math.abs(steer)<.05?28:22;
   p.travelHeading=angleDelta(p.travelHeading+angleDelta(p.heading,p.travelHeading)*(1-Math.exp(-traction*dt)),0);
   const rel=angleDelta(p.travelHeading,Math.atan(slope(p.s,m))),before=roadPoint(p.s,p.x,0,m);
   p.vx=p.v*Math.sin(rel);p.s+=p.v*Math.cos(rel)*dt/Math.sqrt(1+slope(p.s,m)**2);p.x+=p.vx*dt;p.y=height(p.s,m);

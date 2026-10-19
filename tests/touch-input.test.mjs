@@ -60,25 +60,32 @@ pad.send('pointerdown', 13, { clientX: 350 }); steering.clear(); assert.equal(st
 enabled = false; pad.send('pointerdown', 14, { clientX: 350 }); assert.equal(steering.value, 0);
 enabled = true;
 pad.send('pointerdown', 15, {clientX:326, clientY:250});assert.equal(steering.value,0);assert.equal(steering.throttle,1);
+pad.send('pointermove',15,{clientX:329,clientY:250});assert.equal(steering.value,0,'small thumb wobble on full throttle stays inside steering dead zone');assert.equal(steering.throttle,1);
 pad.send('pointermove', 15, {clientX:326, clientY:310});assert.equal(steering.throttle,-1);
-pad.send('pointermove', 15, {clientX:350, clientY:254});assert(Math.abs(steering.value-Math.SQRT1_2)<.001&&Math.abs(steering.throttle-Math.SQRT1_2)<.001,'diagonal uses a circular limit, not a square');
+pad.send('pointermove', 15, {clientX:350, clientY:254});assert(steering.value>.6&&steering.value<.7&&steering.throttle===1,'diagonal keeps full throttle with independent steering');
 pad.send('pointermove', 15, {clientX:302, clientY:302});assert(steering.value<0&&steering.throttle<0);
 pad.send('pointercancel',15);assert.equal(steering.throttle,0);assert.equal(pad.properties.get('--stick-y'),'0px');
 // Keep the first finger steering throughout: secondary touches intentionally
 // have no click event, as on phones with an ongoing primary touch.
 enabled = true;
 let suction = false, toggles = 0, rolls = 0;
-const grip = new Button(640), roll = new Button(550), pause = new Button(20);
+const grip = new Button(640), roll = new Button(550), pause = new Button(20), brake = new Button(730);
+input.bind(brake,['KeyB']);
 input.bindAction(grip, () => { suction = !suction; toggles++; });
 input.bindAction(roll, () => { rolls++; });
 input.bindAction(pause, () => { enabled = false; input.clear(); steering.clear(); });
 pad.send('pointerdown', 20, { isPrimary: true, clientX: 350, clientY: 254 });
 const heldSteering = steering.value, heldThrottle = steering.throttle;assert(heldThrottle > .5);
 boost.send('pointerdown', 21, { isPrimary: false });
+brake.send('pointerdown',30,{isPrimary:false});
+assert(input.pressed('KeyB')&&steering.throttle===heldThrottle,'drift brake can be held while steering and giving throttle');
 assert(!grip.classes.has('pressed'), 'Holding acceleration must not light action buttons');
 grip.send('pointerdown', 22, { isPrimary: false });
 assert(suction && toggles === 1, 'Secondary finger switches grip immediately without a click');
 assert.equal(steering.value, heldSteering); assert.equal(steering.throttle, heldThrottle); assert(input.pressed('ShiftLeft'));
+assert(input.pressed('KeyB'),'grip toggle cannot release the held drift brake');
+brake.send('pointerup',30,{isPrimary:false});
+assert(!input.pressed('KeyB')&&steering.value===heldSteering&&input.pressed('ShiftLeft'),'ending drift releases only the brake finger');
 assert(grip.classes.has('pressed'));
 grip.send('pointerdown', 22, { isPrimary: false });
 assert.equal(toggles, 1, 'Repeated down for the same held pointer must not toggle again');

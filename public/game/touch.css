@@ -123,3 +123,15 @@
 @media(prefers-reduced-motion:reduce){#hud .control-button,#trickHud{transition:none}}
 
 .stick-label{position:absolute;left:0;width:100%;font-size:7px;letter-spacing:1px;color:#bad4db99;text-align:center;pointer-events:none}.stick-label.forward{top:10px}.stick-label.reverse{bottom:10px}
+
+/* Drift charge lives on the thumb button as well as the compact telemetry. */
+#hud .brake.drifting{--accent:#9cd8ff;border-color:var(--accent);background:radial-gradient(circle at 35% 20%,#34576b,#142a3b);box-shadow:0 0 18px #80ccff28,inset 0 0 0 5px #b8e4ff0a}
+#hud .brake.drifting[data-tier="1"]{--accent:#ffd197}
+#hud .brake.drifting[data-tier="2"]{--accent:#d7b0ff}
+#hud .brake.drifting::before{content:"";position:absolute;inset:-4px;border-radius:50%;background:conic-gradient(var(--accent) var(--drift-charge),#9fc6d11a 0);mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 0);pointer-events:none}
+#hud .drive-readout{font-variant-numeric:tabular-nums}
+#hud .drive-readout,#hud .score,.route-label,#trickHud,.stick-label,.steering-pad small{text-shadow:0 1px 4px #000,0 0 10px #0008}
+#trackStatus{width:max-content;max-width:100%;padding:0 6px;border-radius:4px;background:#0b192bb3;color:#d5e5eb;overflow:hidden;text-overflow:ellipsis}
+#trackStatus:empty{visibility:hidden}
+#trickLabel{padding:2px 5px;border-radius:3px;background:#0b192b99}
+#hud .control-button:focus-visible,.steering-pad:focus-visible{outline:2px solid #d4f8ed;outline-offset:5px}
