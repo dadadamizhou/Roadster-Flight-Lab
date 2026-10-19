@@ -10,7 +10,7 @@
     "dev": "next dev --hostname 127.0.0.1 --port 5173",
     "build": "next build",
     "start": "next start --hostname 127.0.0.1 --port 5173",
-    "test": "node tests/physics.test.mjs && node tests/world.test.mjs && node tests/touch-input.test.mjs && node tests/stunt-controls.test.mjs",
+    "test": "node tests/physics.test.mjs && node tests/world.test.mjs && node tests/touch-input.test.mjs && node tests/stunt-controls.test.mjs && node tests/fullscreen.test.mjs",
     "test:api": "node tests/api.test.mjs",
     "typecheck": "tsc --noEmit"
   },

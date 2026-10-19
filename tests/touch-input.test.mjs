@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { createTouchInput, createSteeringInput } from '../public/game/touch-input.js';
+import { createTouchInput, createSteeringInput, steeringResponse } from '../public/game/touch-input.js';
 import { fresh, step, MAPS } from '../public/game/physics.js';
 
 class Button extends EventTarget {
@@ -124,3 +124,31 @@ grip.send('pointerup', 26); grip.send('click', 26, { detail: 1 });
 assert.equal(toggles, pausedCount, 'Late events after resume cannot retrigger an action');
 grip.send('pointerdown', 29, { button: 2 }); assert.equal(toggles, pausedCount);
 console.log('Touch controls: simultaneous steering/boost/grip/stunts, single activation, keyboard access, cancellation, pause cleanup and empty-air driving passed.');
+
+// Browser chrome moves the pad, but the active finger keeps its input origin.
+pad.send('pointerdown',40,{clientX:350,clientY:254});
+const beforeResize={x:steering.value,y:steering.throttle};pad.top+=50;
+pad.send('pointermove',40,{clientX:350,clientY:254});
+assert.equal(steering.value,beforeResize.x);assert.equal(steering.throttle,beforeResize.y);
+pad.send('pointerup',40);pad.send('pointerdown',41,{clientX:326,clientY:328});assert.equal(steering.value,0);assert.equal(Math.abs(steering.throttle),0,'next gesture uses the new layout');steering.clear();pad.top-=50;
+// Hysteresis prevents jump flicker around the border between two circles.
+boost.send('pointerdown',42);boost.send('pointermove',42,{clientY:720});assert(!input.pressed('Space'));
+boost.send('pointermove',42,{clientY:700});assert(input.pressed('Space'));
+for(const y of [711,718,726,720]){boost.send('pointermove',42,{clientY:y});assert(input.pressed('Space'),'small boundary wobble preserves jump');}
+boost.send('pointermove',42,{clientY:735});assert(!input.pressed('Space'));input.clear();
+// Fullscreen activates on touch release, including non-primary fingers.
+const display=new Button(0),uiInput=createTouchInput();let requests=0;
+uiInput.bindAction(display,()=>requests++,{onRelease:true});
+display.send('pointerdown',50,{isPrimary:false});assert.equal(requests,0);
+display.send('pointerup',50,{isPrimary:false});assert.equal(requests,1);
+display.send('click',50,{detail:1});assert.equal(requests,1);
+display.send('pointerdown',51);display.send('pointercancel',51);display.send('pointerup',51);assert.equal(requests,1);
+display.send('pointerdown',52);uiInput.clear();display.send('pointerup',52);assert.equal(requests,1);
+display.send('click',-1,{pointerType:'',detail:0});assert.equal(requests,2,'keyboard activation works');
+for(const preset of ['soft','balanced','direct']){
+ for(const value of [-1,-.7,-.2,0,.2,.7,1])assert(Math.abs(steeringResponse(value,preset))<=1);
+ assert.equal(steeringResponse(1,preset),1);assert.equal(steeringResponse(-1,preset),-1);assert.equal(steeringResponse(0,preset),0);
+}
+assert(steeringResponse(.3,'soft')<steeringResponse(.3,'balanced'));assert(steeringResponse(.3,'direct')>steeringResponse(.3,'balanced'));
+assert.equal(steeringResponse(.4,'unknown'),.4);assert.equal(steeringResponse(NaN),0);
+console.log('Stable joystick during resize, jump gesture hysteresis, release-activated UI and steering presets passed.');

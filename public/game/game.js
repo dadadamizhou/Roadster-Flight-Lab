@@ -2,17 +2,19 @@ import * as T from './vendor/three.module.js';
 import {createCar} from './model.js';
 import {MAPS,clamp,center,slope,height,gapAt,gapsInRange,bank,gripSection,nextGrip,needsGrip,fresh,step,score,stats,collectRing,damage,nearMiss,requestRoll,rollAvailability,canReattach,angleDelta} from './physics.js';
 import {makeWorld,pose,trackUp,disposeWorld} from './world.js';
-import {createTouchInput,createSteeringInput} from './touch-input.js';
-import {enterLandscape} from './orientation.js';
+import {createTouchInput,createSteeringInput,steeringResponse} from './touch-input.js';
+import {createFullscreenController} from './orientation.js';
 const $=id=>document.getElementById(id),show=(id,v)=>$(id).classList.toggle('hidden',!v);
 const storage={get(k,def){try{return JSON.parse(localStorage.getItem('rfl-'+k))??def;}catch{return def;}},set(k,v){try{localStorage.setItem('rfl-'+k,JSON.stringify(v));}catch{}}};
 let player=storage.get('player',null);if(!player){player=crypto.randomUUID();storage.set('player',player);}
 let selected=storage.get('map','city');if(!MAPS[selected])selected='city';
 let map=MAPS[selected],state=fresh(map),mode='menu',world=null,runId=null,suction=false,quality=storage.get('quality','balanced'),sound=false,cameraMode=0,keys={},countdown=0,elapsed=0,frames=0,fps=60,uiClock=0,toastUntil=0,eventSeen=0,demo=false,drag=false,dragX=0,angle=.05,zoom=1;
+let sensitivity=storage.get('steering-response','balanced');if(!['soft','balanced','direct'].includes(sensitivity))sensitivity='balanced';
+const fullscreen=createFullscreenController(),systemInput=createTouchInput();let wasFullscreen=fullscreen.state().active;
 const touchInput=createTouchInput(()=>['playing','countdown'].includes(mode));
 const steering=createSteeringInput($('steeringPad'),()=>['playing','countdown'].includes(mode));
 const pressed=code=>!!keys[code]||touchInput.pressed(code);
-function clearInputs(){keys={};touchInput.clear();steering.clear();}
+function clearInputs(){keys={};touchInput.clear();steering.clear();systemInput.clear();}
 let audio=null,engine=null,engineGain=null,airSound=null,airGain=null;
 const canvas=$('scene');let renderer;
 try{renderer=new T.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});}catch(e){$('loadStatus').textContent='浏览器未能启用 WebGL，请使用支持硬件加速的浏览器。';throw e;}
@@ -49,7 +51,7 @@ function timeText(t){return String(Math.floor(t/60)).padStart(2,'0')+':'+(t%60).
 function selectMap(id){selected=id;map=MAPS[id];storage.set('map',id);document.querySelectorAll('[data-map]').forEach(b=>b.classList.toggle('active',b.dataset.map===id));stageRing.material.color.setHex(map.accent);}
 function menu(){mode='menu';clearInputs();suction=false;demo=false;show('modal',false);show('hud',false);show('garage',false);show('menu',true);stage.visible=true;if(world)world.root.visible=false;scene.fog=null;scene.background.setHex(0x080e12);hemi.color.setHex(0xc2e6ec);sun.color.setHex(0xf3f8f0);document.body.classList.remove('racing');sun.position.set(-8,14,-10);sun.target.position.set(0,0,0);rim.position.set(6,5,6);rim.intensity=2;car.visible=true;car.position.set(1.4,.05,0);camera.up.set(0,1,0);camera.fov=38;camera.updateProjectionMatrix();angle=.05;zoom=1;audioUpdate();}
 async function start(){
- void enterLandscape();cameraReady=false;
+ void fullscreen.enterLandscape().then(refreshFullscreenUI);cameraReady=false;
  show('modal',false);show('garage',false);show('menu',false);show('hud',true);document.body.classList.add('racing');clearInputs();demo=false;suction=false;stage.visible=false;camera.up.set(0,1,0);map=MAPS[selected];state=fresh(map);runId=null;
  if(world){scene.remove(world.root);disposeWorld(world.root);}world=makeWorld(map);scene.add(world.root);scene.background.setHex(map.fog);scene.fog=new T.FogExp2(map.fog,map.id==='orbit'?.0006:map.id==='canyon'?.0028:.0048);sun.color.setHex(map.id==='canyon'?0xffd7b4:0xe6f5ff);hemi.color.setHex(map.id==='orbit'?0xa9b6f3:0xc2e6ec);car.visible=true;mode='countdown';countdown=3;eventSeen=0;toastUntil=0;$('message').textContent='';world.ringData.forEach(r=>r.collected=false);$('mapName').textContent=map.name;$('countdown').textContent='3';updateUI();
  camera.position.copy(pose(0,0,6,map)).add(new T.Vector3(0,0,11));
@@ -60,7 +62,43 @@ function garage(){mode='garage';show('menu',false);show('garage',true);angle=.05
 function modal(html){$('modalContent').innerHTML=html;show('modal',true);}
 function pause(){if(mode!=='playing'&&mode!=='countdown')return;mode='paused';clearInputs();audioUpdate();settings(true);}
 function resume(){show('modal',false);mode=countdown>0?'countdown':'playing';clearInputs();}
-function settings(paused=false){modal(`<div class="eyebrow">${paused?'DRIVE PAUSED':'PREFERENCES'}</div><h2>${paused?'稍作停留。':'驾驶设置'}</h2><div class="setting"><span>画面品质</span><select id="quality" aria-label="画面品质"><option value="low">流畅 · 节能</option><option value="balanced">均衡 · 推荐</option><option value="high">高清</option></select></div><div class="setting"><span>引擎与喷气音效</span><button id="settingSound">${sound?'开启':'关闭'}</button></div><p>左侧轮盘上推给油、下推先减速再倒车，左右转向；斜推同时控制油门与方向。松手惯性滑行，弯道需要自己控制车头。右侧按住刹车配合转向漂移，松开刹车就收尾。小幅转向更柔和，高速时转向更稳；车头仍由你控制。按住加速向上滑，可同时加速腾空。腾空后直接出现左右翻滚键，点一下完成一圈并回正。手机始终使用横屏布局。</p><div class="buttons">${paused?'<button class="outline" id="quit">返回车库</button><button class="outline" id="retry">重试</button>':''}<button class="primary" id="continue">${paused?'继续驾驶 ↗':'完成'}</button></div>`);$('quality').value=quality;$('settingSound').onclick=()=>{toggleSound();$('settingSound').textContent=sound?'开启':'关闭';};$('quality').onchange=e=>{quality=e.target.value;storage.set('quality',quality);renderer.setPixelRatio(Math.min(devicePixelRatio,quality==='high'?2:quality==='low'?1:1.5));renderer.shadowMap.enabled=quality!=='low';};$('continue').onclick=()=>paused?resume():show('modal',false);if(paused){$('quit').onclick=menu;$('retry').onclick=start;}}
+function refreshFullscreenUI(){
+ const view=fullscreen.state(),button=$('fullscreenBtn');
+ button.classList.toggle('on',view.active||view.standalone);button.dataset.active=String(view.active);button.disabled=view.pending;
+ button.setAttribute('aria-pressed',String(view.active||view.standalone));button.setAttribute('aria-label',view.active?'退出全屏':view.standalone?'主屏幕模式已启用':'进入全屏');$('fullscreenLabel').textContent=view.active?'退出':view.standalone?'桌面版':'全屏';
+ if($('displayToggle')){$('displayToggle').textContent=view.active?'退出全屏':view.standalone?'已从桌面打开':'进入全屏';$('displayToggle').disabled=view.pending||view.standalone;}
+ if($('displayState'))$('displayState').textContent=view.active?'全屏已开启':view.standalone?'主屏幕模式 · 无地址栏':view.supported?'隐藏浏览器导航栏':'此浏览器可尝试从主屏幕打开';
+}
+function fullscreenGuide(reason=''){
+ if(!$('fullscreenGuide'))settings(mode==='paused');
+ const apple=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ $('fullscreenGuide').innerHTML=`<b>${reason||'从主屏幕打开游戏'}</b><ol>${apple?'<li>在 Safari 分享菜单中选择「添加到主屏幕」。</li><li>如果出现「作为 Web App 打开」，保持开启，再点「添加」。</li>':'<li>在手机浏览器菜单中选择「添加到主屏幕」或「安装应用」。</li><li>若内置浏览器没有此项，先用系统浏览器打开本页。</li>'}<li>从桌面的 Roadster 图标进入，使用独立窗口游玩。</li></ol><small>主屏幕模式可去掉地址栏；系统状态栏是否隐藏由浏览器决定。</small>`;
+ $('fullscreenGuide').classList.remove('hidden');$('fullscreenGuide').scrollIntoView({block:'nearest'});
+}
+async function toggleFullscreen(){
+ if(fullscreen.state().pending)return;
+ if(['playing','countdown'].includes(mode))pause();
+ const request=fullscreen.toggle();refreshFullscreenUI();
+ const result=await request;refreshFullscreenUI();
+ if(result==='unsupported'||result==='denied')fullscreenGuide(result==='unsupported'?'此浏览器不支持按钮全屏':'浏览器未允许这次全屏请求');
+ else if(result==='standalone')fullscreenGuide('已经在主屏幕模式中，无需再次全屏');
+}
+function settings(paused=false){
+ modal(`<div class="eyebrow">${paused?'DRIVE PAUSED':'PREFERENCES'}</div><h2>${paused?'稍作停留。':'驾驶设置'}</h2>
+ <div class="setting display-setting"><div><span>全屏游玩</span><small id="displayState"></small></div><div class="display-actions"><button class="install-help" id="installHelp">主屏幕说明 ↗</button><button id="displayToggle">进入全屏</button></div></div>
+ <div id="fullscreenGuide" class="fullscreen-guide hidden" role="status"></div>
+ <div class="settings-grid"><div class="setting"><div><span>轮盘转向</span><small>设置自动保存 · 油门不变</small></div><select id="steeringResponse" aria-label="轮盘转向灵敏度"><option value="soft">柔和 · 更好微调</option><option value="balanced">均衡 · 当前手感</option><option value="direct">灵敏 · 更快响应</option></select></div>
+ <div class="setting"><span>画面品质</span><select id="quality" aria-label="画面品质"><option value="low">流畅 · 节能</option><option value="balanced">均衡 · 推荐</option><option value="high">高清</option></select></div>
+ <div class="setting"><span>引擎与喷气音效</span><button id="settingSound">${sound?'开启':'关闭'}</button></div></div>
+ <p class="setting-tip">全屏切换时会暂停，准备好后继续驾驶。操作说明可在车库查看。</p>
+ <div class="buttons">${paused?'<button class="outline" id="quit">返回车库</button><button class="outline" id="retry">重试</button>':''}<button class="primary" id="continue">${paused?'继续驾驶 ↗':'完成'}</button></div>`);
+ $('quality').value=quality;$('steeringResponse').value=sensitivity;
+ $('steeringResponse').onchange=e=>{sensitivity=e.target.value;storage.set('steering-response',sensitivity);};
+ createTouchInput().bindAction($('displayToggle'),toggleFullscreen,{onRelease:true});$('installHelp').onclick=()=>fullscreenGuide();refreshFullscreenUI();
+ $('settingSound').onclick=()=>{toggleSound();$('settingSound').textContent=sound?'开启':'关闭';};
+ $('quality').onchange=e=>{quality=e.target.value;storage.set('quality',quality);renderer.setPixelRatio(Math.min(devicePixelRatio,quality==='high'?2:quality==='low'?1:1.5));renderer.shadowMap.enabled=quality!=='low';};
+ $('continue').onclick=()=>paused?resume():show('modal',false);if(paused){$('quit').onclick=menu;$('retry').onclick=start;}
+}
 function help(){modal(`<div class="eyebrow">ENDLESS / PILOT BRIEFING</div><h2>跑得远，也要跑得漂亮。</h2><p>车辆由你驾驶：上推给油、下推减速后倒车，左右转向，斜推同时给油转弯。松手靠惯性滑行，没有弯道跟随。没有终点和倒计时。碰撞扣 25 点血，侧翻或重落地扣 20 点；血量归零或坠落撞到下方地面，本轮结束。短暂离开路面不会立即判输。气压用完仍能正常行驶。</p><div class="controls-list"><div><kbd>W / ↑</kbd> 给油前进</div><div><kbd>S / ↓</kbd> 减速后倒车</div><div><kbd>A D / ← →</kbd> 左右转向</div><div><kbd>B</kbd> 刹车，配合转向起漂</div><div><kbd>SHIFT</kbd> 喷气加速 · 16% 气 / 秒</div><div><kbd>SPACE</kbd> 按住腾空 · 14% 气 / 秒</div><div><kbd>E</kbd> 吸地开关 · 5% 气 / 秒</div><div><kbd>Q / F</kbd> 左右侧喷 · 7% 气 / 秒</div><div><kbd>Z / X</kbd> 单圈翻滚 · 10% 气 / 次</div><div><kbd>C</kbd> 追尾视角</div><div><kbd>ESC / P</kbd> 暂停</div></div><h3>漂移攒气，喷气出弯</h3><p>关闭吸地，有速度时按住刹车＋转向起漂，松开刹车立即收尾，轮胎平顺恢复抓地。保持给油更容易维持漂移速度。蓝、金、紫三档蓄力，成功完成漂移，分别补气 8% / 16% / 24%，并获得短促加速。碰撞、离开路面会打断本次漂移。穿过小光环可补气 25%。气压上限 100%，不会自动恢复。</p><h3>90° 侧墙 / 180° 倒挂 / 360° 螺旋</h3><p>看到紫色路段提示，提前开启吸地。吸地持续消耗气压。松开或耗尽会按重力脱离路面，但不会因超时判输；车还在附近、气压足够时，重新开启吸地会尝试将它拉回，距离和速度影响能否挽救。只有坠落撞地或血量归零才结束。特殊路段不允许主动腾空、翻滚或漂移；驶出后可以关闭吸地。</p><h3>连续特技，连续加分</h3><p>最远推进每米 2 分（倒车不扣分，也不重复刷距离分）；穿环 150 分；成功漂移每米 4 分；平稳落地 200 分；安全落地的整周翻滚每圈 600 分；高速擦身 250 分；完成反重力路段 500 分。5 秒内连续完成动作可叠至 CHAIN ×5，每次额外奖励最高 400 分；撞击会打断连续奖励，已得分保留。</p><h3>手机双拇指操作</h3><p>左侧是 360° 轮盘：上推给油、下推减速后倒车、左右转向，左上／右上同时给油转弯。松手惯性滑行；空中左右操作会侧喷。右侧四颗等大圆键：上排吸地、跳跃，下排刹车、加速。吸地点击开关，其他三键按住生效；加速上滑到跳跃可同时推进和腾空。腾空后两个翻滚键出现在操作区上方，点击一次完成一圈，消耗 10% 气压并自动回正；高度不够或气压不足时按钮会提示，落地后收起。按钮位置固定，路况和得分提示都在左上角。</p><button class="primary" id="gotIt">准备好了 ↗</button>`);$('gotIt').onclick=()=>show('modal',false);}
 function localRecords(){return storage.get('manual-v3-scores',[]);}
 async function leaderboard(id=selected,local=false){const back=mode;modal(`<div class="eyebrow">FLIGHT RECORDS</div><h2>谁能跑得更远？</h2><div class="board-tabs">${Object.values(MAPS).map(m=>`<button data-board="${m.id}" class="${m.id===id?'active':''}">${m.name}</button>`).join('')}</div><div class="setting" style="padding:0 0 12px"><span id="boardMode">${local?'本机成绩':'在线排行榜'}</span><button id="localToggle">${local?'查看在线':'查看本机'}</button></div><table class="board"><thead><tr><th>#</th><th>驾驶员</th><th>总分</th><th>距离</th></tr></thead><tbody id="boardBody"><tr><td colspan="4" class="empty">正在读取成绩…</td></tr></tbody></table><p class="status" id="boardStatus"></p>`);
@@ -76,8 +114,13 @@ function finish(){mode='result';clearInputs();updateUI();audioUpdate();const poi
 function toggleSuction(){if(!['playing','countdown'].includes(mode))return;suction=!suction;updateUI();}
 function triggerRoll(direction){if(mode==='playing'&&!suction){requestRoll(state,direction,map);updateUI();}}
 const controls=['KeyW','ArrowUp','KeyB','Space','ShiftLeft','ShiftRight','KeyA','KeyS','KeyD','ArrowDown','ArrowLeft','ArrowRight','KeyQ','KeyF','KeyZ','KeyX'];
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;if(controls.includes(e.code)||['KeyE','Escape','KeyP','KeyC'].includes(e.code))e.preventDefault();keys[e.code]=true;if(e.repeat)return;if(e.code==='Escape'||e.code==='KeyP'){if(mode==='paused')resume();else if(['playing','countdown'].includes(mode))pause();else show('modal',false);}if(['playing','countdown'].includes(mode)){if(e.code==='KeyE')toggleSuction();if(e.code==='KeyZ')triggerRoll(1);if(e.code==='KeyX')triggerRoll(-1);if(e.code==='KeyC'){cameraMode=(cameraMode+1)%2;toast(cameraMode?'近距离追尾视角':'标准追尾视角');}}});
+function exitFullscreenOnEscape(e){if(e.code!=='Escape'||!fullscreen.state().active)return false;e.preventDefault();if(!e.repeat)void toggleFullscreen();return true;}
+// Fullscreen targets the host document, which can retain keyboard focus.
+if(window.parent!==window)window.parent.addEventListener('keydown',exitFullscreenOnEscape);
+addEventListener('keydown',e=>{if(exitFullscreenOnEscape(e))return;if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;if(controls.includes(e.code)||['KeyE','Escape','KeyP','KeyC'].includes(e.code))e.preventDefault();keys[e.code]=true;if(e.repeat)return;if(e.code==='Escape'||e.code==='KeyP'){if(mode==='paused')resume();else if(['playing','countdown'].includes(mode))pause();else show('modal',false);}if(['playing','countdown'].includes(mode)){if(e.code==='KeyE')toggleSuction();if(e.code==='KeyZ')triggerRoll(1);if(e.code==='KeyX')triggerRoll(-1);if(e.code==='KeyC'){cameraMode=(cameraMode+1)%2;toast(cameraMode?'近距离追尾视角':'标准追尾视角');}}});
 addEventListener('keyup',e=>{keys[e.code]=false;});addEventListener('blur',()=>{clearInputs();});document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();});
+systemInput.bindAction($('fullscreenBtn'),toggleFullscreen,{onRelease:true});
+fullscreen.subscribe(view=>{refreshFullscreenUI();if(wasFullscreen&&!view.active)pause();wasFullscreen=view.active;});refreshFullscreenUI();
 touchInput.bind($('boostBtn'),['ShiftLeft'],$('liftBtn'));
 touchInput.bind($('liftBtn'),['Space']);
 touchInput.bindAction($('suctionBtn'),toggleSuction);
@@ -86,7 +129,9 @@ touchInput.bindAction($('pauseBtn'),pause);
 document.querySelectorAll('[data-key]').forEach(b=>touchInput.bind(b,[b.dataset.key]));
 $('startBtn').onclick=start;$('homeBtn').onclick=()=>{if(['playing','countdown'].includes(mode))pause();else menu();};$('garageBtn').onclick=garage;$('backGarage').onclick=menu;$('demoJets').onclick=()=>{demo=!demo;$('demoJets').textContent=demo?'停止喷气':'测试喷气';};$('leaderBtn').onclick=()=>leaderboard();$('helpBtn').onclick=help;$('settingsBtn').onclick=()=>{if(['playing','countdown'].includes(mode))pause();else settings();};$('soundBtn').onclick=toggleSound;$('closeModal').onclick=()=>{if(mode==='paused')resume();else if(mode==='result')menu();else show('modal',false);};document.querySelectorAll('[data-map]').forEach(b=>b.onclick=()=>selectMap(b.dataset.map));
 canvas.addEventListener('pointerdown',e=>{if(mode==='garage'||mode==='menu'){drag=true;dragX=e.clientX;canvas.setPointerCapture(e.pointerId);}});canvas.addEventListener('pointermove',e=>{if(drag){angle+=(e.clientX-dragX)*.007;dragX=e.clientX;}});canvas.addEventListener('pointerup',()=>drag=false);canvas.addEventListener('pointercancel',()=>drag=false);canvas.addEventListener('wheel',e=>{if(mode==='garage'){e.preventDefault();zoom=clamp(zoom+e.deltaY*.001,.7,1.5);}},{passive:false});
-addEventListener('resize',()=>{clearInputs();camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+// Actual device rotation invalidates touch coordinates; browser-bar resizing does not.
+if(window.parent.screen.orientation?.addEventListener)window.parent.screen.orientation.addEventListener('change',clearInputs);else window.parent.addEventListener('orientationchange',clearInputs);
 function updateUI(){
  const alt=Math.max(0,state.y-height(state.s,map)),section=gripSection(state.s),next=nextGrip(state.s),near=next&&next.a-state.s<160;
  const bend=angleDelta(Math.atan(slope(state.s+65,map)),Math.atan(slope(state.s+12,map))),bendHint=state.v>5&&Math.abs(bend)>.14?(bend>0?'↱ 右弯':'↰ 左弯')+(Math.abs(bend)>.38?' · 提前减速':' · 轻推方向'):'';
@@ -112,7 +157,7 @@ function updateUI(){
  $('trickFill').style.width=(state.drifting?Math.min(100,state.driftTime/2.2*100):state.comboTime/5*100)+'%';
  const c=$('minimap'),ctx=c.getContext('2d');ctx.clearRect(0,0,150,160);ctx.strokeStyle='#a1cac555';ctx.lineWidth=15;ctx.beginPath();for(let s=state.s-20;s<state.s+400;s+=5){const x=75+(center(s,map)-center(state.s,map))*.45,y=145-(s-state.s)*.32;if(s===state.s-20)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();ctx.fillStyle='#a4f5ce';ctx.save();ctx.translate(75+state.x*1.5,143);ctx.rotate(state.heading-Math.atan(slope(state.s,map)));ctx.beginPath();ctx.moveTo(0,-7);ctx.lineTo(-4,6);ctx.lineTo(4,6);ctx.closePath();ctx.fill();ctx.restore();
 }
-function simulate(dt){const before=state.collisions,beforeHealth=state.health;step(state,{throttle:((pressed('KeyW')||pressed('ArrowUp')?1:0)-(pressed('KeyS')||pressed('ArrowDown')?1:0))||steering.throttle,brake:pressed('KeyB'),steer:((pressed('KeyD')||pressed('ArrowRight')?1:0)-(pressed('KeyA')||pressed('ArrowLeft')?1:0))||steering.value,lift:pressed('Space'),boost:pressed('ShiftLeft')||pressed('ShiftRight'),suction,side:(pressed('KeyF')?1:0)-(pressed('KeyQ')?1:0)},dt,map);
+function simulate(dt){const before=state.collisions,beforeHealth=state.health;step(state,{throttle:((pressed('KeyW')||pressed('ArrowUp')?1:0)-(pressed('KeyS')||pressed('ArrowDown')?1:0))||steering.throttle,brake:pressed('KeyB'),steer:((pressed('KeyD')||pressed('ArrowRight')?1:0)-(pressed('KeyA')||pressed('ArrowLeft')?1:0))||(state.grounded?steeringResponse(steering.value,sensitivity):steering.value),lift:pressed('Space'),boost:pressed('ShiftLeft')||pressed('ShiftRight'),suction,side:(pressed('KeyF')?1:0)-(pressed('KeyQ')?1:0)},dt,map);
  if(!state.failed){
   for(let i=0;i<world.ringData.length;i++){const r=world.ringData[i];if(!r.collected&&Math.abs(state.s-r.s)<2.8&&Math.hypot(state.x-r.x,state.y-height(state.s,map)+.7-r.y)<2.5){r.collected=true;world.ringMeshes[i].visible=false;if(world.collectRing(r.id))collectRing(state);}}
   for(const o of world.obstacles){

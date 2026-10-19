@@ -17,7 +17,7 @@ export function createTouchInput(enabled = () => true) {
       pointers.clear(); paint();
       for (const [id, p] of held) if (p.button.hasPointerCapture(id)) p.button.releasePointerCapture(id);
     },
-    bindAction(button, action) {
+    bindAction(button, action, { onRelease = false } = {}) {
       buttons.set(button, []);
       button.addEventListener('contextmenu', e => e.preventDefault());
       button.addEventListener('pointerdown', e => {
@@ -28,10 +28,15 @@ export function createTouchInput(enabled = () => true) {
         pointers.set(e.pointerId, { button, codes: [] });
         button.setPointerCapture(e.pointerId);
         paint();
-        action();
+        if (!onRelease) action();
       });
       for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
-        button.addEventListener(event, e => release(e.pointerId));
+        button.addEventListener(event, e => {
+          const held = pointers.get(e.pointerId);
+          release(e.pointerId);
+          // Touch fullscreen needs pointerup's user activation.
+          if (onRelease && event === 'pointerup' && held?.button === button && enabled() && !button.disabled) action();
+        });
       }
       button.addEventListener('click', e => {
         // A physical tap was already handled, even if its click arrives late.
@@ -46,7 +51,7 @@ export function createTouchInput(enabled = () => true) {
       button.addEventListener('pointerdown', e => {
         if (!enabled() || e.button !== 0) return;
         e.preventDefault();
-        pointers.set(e.pointerId, { button, codes: [...codes] });
+        pointers.set(e.pointerId, { button, codes: [...codes], jumping: false });
         button.setPointerCapture(e.pointerId);
         paint();
       });
@@ -55,8 +60,10 @@ export function createTouchInput(enabled = () => true) {
         if (!held || held.button !== button || !slideTarget || e.pointerType === 'mouse') return;
         const target = slideTarget.getBoundingClientRect(), origin = button.getBoundingClientRect();
         // Keep accelerating while the thumb slides upward to the jump circle.
-        const jump = e.clientY < (origin.top + target.bottom) / 2
+        const boundary = (origin.top + target.bottom) / 2;
+        const jump = e.clientY < boundary + (held.jumping ? 9 : -5)
           && e.clientX >= target.left - 24 && e.clientX <= target.right + 24;
+        held.jumping = jump;
         held.codes = jump ? [...codes, 'Space'] : [...codes];
         paint();
       });
@@ -69,11 +76,12 @@ export function createTouchInput(enabled = () => true) {
 
 // A radial two-axis stick: horizontal steering, vertical throttle/reverse.
 export function createSteeringInput(pad, enabled = () => true) {
-  let active = null, x = 0, y = 0;
+  let active = null, x = 0, y = 0, origin = null;
   function move(e) {
-    const rect = pad.getBoundingClientRect(), radius = rect.width * .30;
-    let dx = (e.clientX - rect.left - rect.width / 2) / radius;
-    let dy = (e.clientY - rect.top - rect.height / 2) / radius;
+    // Browser bar animations must not turn a stationary thumb into steering.
+    const { centerX, centerY, radius } = origin;
+    let dx = (e.clientX - centerX) / radius;
+    let dy = (e.clientY - centerY) / radius;
     const length = Math.hypot(dx, dy), scale = length > 1 ? 1 / length : 1;
     dx *= scale; dy *= scale;
     // Independent dead zones stop thumb wobble becoming steering. The upper
@@ -85,7 +93,7 @@ export function createSteeringInput(pad, enabled = () => true) {
   }
   function release(e) {
     if (e && e.pointerId !== active) return;
-    const id = active; active = null; x = 0; y = 0;
+    const id = active; active = null; origin = null; x = 0; y = 0;
     pad.style.setProperty('--stick-x', '0px'); pad.style.setProperty('--stick-y', '0px'); pad.classList.toggle('pressed', false);
     if (id !== null && pad.hasPointerCapture(id)) pad.releasePointerCapture(id);
   }
@@ -93,9 +101,18 @@ export function createSteeringInput(pad, enabled = () => true) {
   pad.addEventListener('pointerdown', e => {
     if (!enabled() || active !== null || e.button !== 0) return;
     e.preventDefault(); active = e.pointerId; pad.setPointerCapture(active);
+    const rect = pad.getBoundingClientRect();
+    origin = {centerX:rect.left + rect.width / 2,centerY:rect.top + rect.height / 2,radius:rect.width * .30};
     pad.classList.toggle('pressed', true); move(e);
   });
   pad.addEventListener('pointermove', e => { if (e.pointerId === active) move(e); });
   for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) pad.addEventListener(event, release);
   return { get value() { return x; }, get throttle() { return y; }, clear() { release(); } };
+}
+
+// Softer small corrections, while preserving full lock in every preset.
+export function steeringResponse(value, preset = 'balanced') {
+  const v = Math.max(-1, Math.min(1, Number.isFinite(value) ? value : 0));
+  const power = preset === 'soft' ? 1.4 : preset === 'direct' ? .8 : 1;
+  return Math.sign(v) * Math.abs(v) ** power;
 }
