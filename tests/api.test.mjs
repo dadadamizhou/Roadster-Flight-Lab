@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {calculateScore} from '../public/game/rules.js';
 const origin='http://127.0.0.1:5173';
 const send=async(path,body)=>{const r=await fetch(origin+path,{method:'POST',headers:{'Content-Type':'application/json','Origin':origin},body:JSON.stringify(body)});return {status:r.status,data:await r.json()};};
-const player='test-'+crypto.randomUUID(),run=await send('/api/runs',{player,map:'city'});assert.equal(run.status,200);assert(run.data.id);
+const player='test-'+crypto.randomUUID(),run=await send('/api/runs',{player,map:'city'});assert.equal(run.status,200);assert(run.data.id);assert.equal(JSON.parse(Buffer.from(run.data.id.split('.')[0],'base64url').toString()).version,3);
 const b={run:run.data.id,player,name:'QA ENDLESS',time:2.1,distance:55,rings:0,collisions:1,landings:0,driftMeters:0,drifts:0,rolls:0,nearMisses:0,gripSections:0,comboBonus:0};
 assert.equal((await send('/api/scores',{...b,time:500})).status,400,'future time rejected');
 for(const bad of [{rings:99},{distance:900},{comboBonus:100},{rolls:1},{driftMeters:50},{health:100,distance:null},{collisions:6}])assert.equal((await send('/api/scores',{...b,...bad})).status,400);

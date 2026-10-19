@@ -11,7 +11,7 @@ class Button extends EventTarget {
   setPointerCapture(id) { this.captured.add(id); }
   hasPointerCapture(id) { return this.captured.has(id); }
   releasePointerCapture(id) { this.captured.delete(id); this.send('lostpointercapture', id); }
-  getBoundingClientRect() { return { left: 280, right: 372, width: 92, top: this.top, bottom: this.top + 76 }; }
+  getBoundingClientRect() { return { left: 280, right: 372, width: 92, height: 76, top: this.top, bottom: this.top + 76 }; }
   send(type, pointerId, extra = {}) {
     const event = new Event(type, { cancelable: true });
     Object.assign(event, { pointerId, pointerType: 'touch', button: 0, clientX: 320, clientY: 780 }, extra);
@@ -43,10 +43,12 @@ enabled = true; boost.send('pointerdown', 8, { button: 2 }); assert.equal(input.
 boost.send('pointerdown', 9, { pointerType: 'mouse' }); boost.send('pointermove', 9, { pointerType: 'mouse', clientY: 680 });
 assert.equal(input.pressed('Space'), false, 'Mouse clicks do not accidentally trigger a slide gesture');
 const car = fresh(MAPS.city); car.air = 0;
-for (let i = 0; i < 120; i++) step(car, { throttle: input.pressed('KeyW'), boost: input.pressed('ShiftLeft') }, 1 / 120, MAPS.city);
-assert.ok(car.v > 10 && !("battery" in car) && car.air === 0, 'Automatic driving still works when air is empty');
+for (let i = 0; i < 120; i++) step(car, { throttle: input.pressed('KeyW') ? 1 : 0, boost: input.pressed('ShiftLeft') }, 1 / 120, MAPS.city);
+assert.ok(car.v > 10 && !("battery" in car) && car.air === 0, 'Manual motor drive still works when air is empty');
 input.clear();
-const pad = new Button(240), steering = createSteeringInput(pad, () => enabled);
+const pad = new Button(240);
+const sendPad=pad.send.bind(pad);pad.send=(type,id,extra={})=>sendPad(type,id,{clientY:278,...extra});
+const steering = createSteeringInput(pad, () => enabled);
 pad.send('pointerdown', 11, { clientX: 326 }); assert.equal(steering.value, 0);
 pad.send('pointermove', 11, { clientX: 338 }); assert.ok(steering.value > .3 && steering.value < .6);
 pad.send('pointerdown', 12, { clientX: 280 }); assert.ok(steering.value > 0, 'A second finger must not hijack the steering stick');
@@ -56,6 +58,12 @@ pad.send('pointerup', 12); assert.equal(steering.value, -1);
 pad.send('pointercancel', 11); assert.equal(steering.value, 0); assert.equal(pad.properties.get('--stick-x'), '0px');
 pad.send('pointerdown', 13, { clientX: 350 }); steering.clear(); assert.equal(steering.value, 0); assert.equal(pad.classes.size, 0);
 enabled = false; pad.send('pointerdown', 14, { clientX: 350 }); assert.equal(steering.value, 0);
+enabled = true;
+pad.send('pointerdown', 15, {clientX:326, clientY:250});assert.equal(steering.value,0);assert.equal(steering.throttle,1);
+pad.send('pointermove', 15, {clientX:326, clientY:310});assert.equal(steering.throttle,-1);
+pad.send('pointermove', 15, {clientX:350, clientY:254});assert(Math.abs(steering.value-Math.SQRT1_2)<.001&&Math.abs(steering.throttle-Math.SQRT1_2)<.001,'diagonal uses a circular limit, not a square');
+pad.send('pointermove', 15, {clientX:302, clientY:302});assert(steering.value<0&&steering.throttle<0);
+pad.send('pointercancel',15);assert.equal(steering.throttle,0);assert.equal(pad.properties.get('--stick-y'),'0px');
 // Keep the first finger steering throughout: secondary touches intentionally
 // have no click event, as on phones with an ongoing primary touch.
 enabled = true;
@@ -64,13 +72,13 @@ const grip = new Button(640), roll = new Button(550), pause = new Button(20);
 input.bindAction(grip, () => { suction = !suction; toggles++; });
 input.bindAction(roll, () => { rolls++; });
 input.bindAction(pause, () => { enabled = false; input.clear(); steering.clear(); });
-pad.send('pointerdown', 20, { isPrimary: true, clientX: 350 });
-const heldSteering = steering.value;
+pad.send('pointerdown', 20, { isPrimary: true, clientX: 350, clientY: 254 });
+const heldSteering = steering.value, heldThrottle = steering.throttle;assert(heldThrottle > .5);
 boost.send('pointerdown', 21, { isPrimary: false });
 assert(!grip.classes.has('pressed'), 'Holding acceleration must not light action buttons');
 grip.send('pointerdown', 22, { isPrimary: false });
 assert(suction && toggles === 1, 'Secondary finger switches grip immediately without a click');
-assert.equal(steering.value, heldSteering); assert(input.pressed('ShiftLeft'));
+assert.equal(steering.value, heldSteering); assert.equal(steering.throttle, heldThrottle); assert(input.pressed('ShiftLeft'));
 assert(grip.classes.has('pressed'));
 grip.send('pointerdown', 22, { isPrimary: false });
 assert.equal(toggles, 1, 'Repeated down for the same held pointer must not toggle again');
@@ -97,7 +105,7 @@ roll.send('pointercancel', 25); roll.send('click', 25, { detail: 1 });
 assert.equal(rolls, 1); assert(!roll.classes.has('pressed'));
 grip.send('pointerdown', 26, { isPrimary: false });
 grip.send('lostpointercapture', 26); assert(!grip.classes.has('pressed'));
-assert.equal(steering.value, heldSteering); assert(input.pressed('ShiftLeft'));
+assert.equal(steering.value, heldSteering); assert.equal(steering.throttle, heldThrottle); assert(input.pressed('ShiftLeft'));
 pause.send('pointerdown', 27, { isPrimary: false });
 assert(!enabled && steering.value === 0 && !input.pressed('ShiftLeft'));
 assert(!pause.hasPointerCapture(27) && !pause.classes.has('pressed'));

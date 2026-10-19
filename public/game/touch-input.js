@@ -67,19 +67,25 @@ export function createTouchInput(enabled = () => true) {
   };
 }
 
-// A one-axis steering stick: small drags give gentle turns, release recenters.
+// A radial two-axis stick: horizontal steering, vertical throttle/reverse.
 export function createSteeringInput(pad, enabled = () => true) {
-  let active = null, value = 0;
+  let active = null, x = 0, y = 0;
   function move(e) {
-    const rect = pad.getBoundingClientRect(), radius = rect.width * .27;
-    const raw = Math.max(-1, Math.min(1, (e.clientX - rect.left - rect.width / 2) / radius));
-    value = Math.abs(raw) < .1 ? 0 : Math.sign(raw) * (Math.abs(raw) - .1) / .9;
-    pad.style.setProperty('--stick-x', (raw * radius).toFixed(1) + 'px');
+    const rect = pad.getBoundingClientRect(), radius = rect.width * .30;
+    let dx = (e.clientX - rect.left - rect.width / 2) / radius;
+    let dy = (e.clientY - rect.top - rect.height / 2) / radius;
+    const length = Math.hypot(dx, dy), scale = length > 1 ? 1 / length : 1;
+    dx *= scale; dy *= scale;
+    const strength = Math.max(0, (Math.min(1, length) - .12) / .88);
+    x = length > .12 ? dx / Math.min(length, 1) * strength : 0;
+    y = length > .12 ? -dy / Math.min(length, 1) * strength : 0;
+    pad.style.setProperty('--stick-x', (dx * radius).toFixed(1) + 'px');
+    pad.style.setProperty('--stick-y', (dy * radius).toFixed(1) + 'px');
   }
   function release(e) {
     if (e && e.pointerId !== active) return;
-    const id = active; active = null; value = 0;
-    pad.style.setProperty('--stick-x', '0px'); pad.classList.toggle('pressed', false);
+    const id = active; active = null; x = 0; y = 0;
+    pad.style.setProperty('--stick-x', '0px'); pad.style.setProperty('--stick-y', '0px'); pad.classList.toggle('pressed', false);
     if (id !== null && pad.hasPointerCapture(id)) pad.releasePointerCapture(id);
   }
   pad.addEventListener('contextmenu', e => e.preventDefault());
@@ -90,5 +96,5 @@ export function createSteeringInput(pad, enabled = () => true) {
   });
   pad.addEventListener('pointermove', e => { if (e.pointerId === active) move(e); });
   for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) pad.addEventListener(event, release);
-  return { get value() { return value; }, clear() { release(); } };
+  return { get value() { return x; }, get throttle() { return y; }, clear() { release(); } };
 }

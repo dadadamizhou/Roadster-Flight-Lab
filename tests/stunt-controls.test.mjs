@@ -14,7 +14,7 @@ for(const direction of [-1,1]){
 p=fresh(m);p.grounded=false;p.y+=12;p.vy=5;p.air=TAP_ROLL.air-.1;assert.equal(rollAvailability(p,m),'air');assert(!requestRoll(p,1,m));
 p.air=100;p.suction=true;assert.equal(rollAvailability(p,m),'grip');assert(!requestRoll(p,1,m));
 p.suction=false;p.s=880;p.y=height(p.s,m)+12;assert.equal(rollAvailability(p,m),'grip');
-p=fresh(m);p.grounded=false;p.y+=12;p.vy=5;assert(requestRoll(p,1,m));tick(p,.3);p.y=height(p.s,m)+.05;p.vy=-3;tick(p,.1);assert.equal(p.autoRoll,0);assert.equal(p.rolls,0,'interrupted flip must not score');
+p=fresh(m);p.grounded=false;p.y+=12;p.vy=5;assert(requestRoll(p,1,m));tick(p,.3);p.flight=null;p.y=height(p.s,m)+.05;p.vy=-3;tick(p,.1);assert.equal(p.autoRoll,0);assert.equal(p.rolls,0,'interrupted flip must not score');
 p=fresh(m);p.grounded=false;p.y+=10;p.vy=5;p.roll=Math.PI;assert.equal(rollAvailability(p,m),'busy','upside-down is not level');
 p.roll=0;assert(requestRoll(p,1,m));tick(p,.9);damage(p);tick(p,1.5,{lift:true});assert.equal(p.pendingRolls,0,'collision-cancelled flip cannot score during recovery');
 for(const map of Object.values(MAPS)){

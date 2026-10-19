@@ -1,15 +1,15 @@
 import * as T from './vendor/three.module.js';
-import {center,slope,height,gapAt,gapsInRange,bank,gripSection,nextGrip,obstacles,rings} from './physics.js';
-export function pose(s,x,y,m){const a=Math.atan(slope(s,m)),b=bank(s),side=x*Math.cos(b)-y*Math.sin(b),up=x*Math.sin(b)+y*Math.cos(b);return new T.Vector3(center(s,m)+side*Math.cos(a),height(s,m)+up,-s+side*Math.sin(a));}
+import {center,slope,height,gapAt,gapsInRange,bank,gripSection,nextGrip,obstacles,rings,roadPoint} from './physics.js';
+export function pose(s,x,y,m){const p=roadPoint(s,x,y,m);return new T.Vector3(p.x,p.y,p.z);}
 function sceneryPose(s,x,y,m){const a=Math.atan(slope(s,m));return new T.Vector3(center(s,m)+x*Math.cos(a),height(s,m)+y,-s+x*Math.sin(a));}
 export function trackUp(s,m){const a=Math.atan(slope(s,m)),b=bank(s);return new T.Vector3(-Math.sin(b)*Math.cos(a),Math.cos(b),-Math.sin(b)*Math.sin(a));}
 const CHUNK=640;
 export function makeWorld(m){
- const root=new T.Group(),chunks=new Map();let current=-1;
- const view={root,ringData:[],ringMeshes:[],obstacles:[],chunkCount:0,update};
- function update(s){const index=Math.floor(s/CHUNK);if(index===current)return;current=index;
+ const root=new T.Group(),chunks=new Map(),collected=new Set(),passed=new Set();let current=-1;
+ const view={root,ringData:[],ringMeshes:[],obstacles:[],chunkCount:0,update,collectRing(id){if(collected.has(id))return false;collected.add(id);return true;},passObstacle(id){if(passed.has(id))return false;passed.add(id);return true;}};
+ function update(s){const index=Math.max(0,Math.floor(s/CHUNK));if(index===current)return;current=index;
   for(const [i,c]of chunks)if(i<index-1||i>index+2){root.remove(c.root);disposeWorld(c.root);chunks.delete(i);}
-  for(let i=Math.max(0,index-1);i<=index+2;i++)if(!chunks.has(i)){const c=makeChunk(m,i);chunks.set(i,c);root.add(c.root);}
+  for(let i=Math.max(0,index-1);i<=index+2;i++)if(!chunks.has(i)){const c=makeChunk(m,i);c.ringData.forEach((r,n)=>{if(collected.has(r.id)){r.collected=true;c.ringMeshes[n].visible=false;}});c.obstacles.forEach(o=>o.passed=passed.has(o.id));chunks.set(i,c);root.add(c.root);}
   const live=[...chunks.values()];view.ringData=live.flatMap(c=>c.ringData);view.ringMeshes=live.flatMap(c=>c.ringMeshes);view.obstacles=live.flatMap(c=>c.obstacles);view.chunkCount=chunks.size;
  }
  update(0);return view;
@@ -51,7 +51,7 @@ function makeChunk(m,index){
  for(const r of ringData){const group=new T.Group(),o=new T.Mesh(ringGeo,ringMat);group.add(o);group.position.copy(pose(r.s,r.x,r.y,m));group.rotation.set(0,-Math.atan(slope(r.s,m)),bank(r.s),'YXZ');const diamond=new T.Mesh(new T.OctahedronGeometry(.28),ringMat);diamond.position.y=3;group.add(diamond);root.add(group);ringMeshes.push(group);}
  for(const [a,b]of gapsInRange(m,from-20,to+20)){for(const s of [a-12,b+2])if(s>=from&&s<to)at('gapline',0xffc378,m.width*2,.04,.5,s,0,.07,0xffc378);if(a-17>=from&&a-17<to){const sign=label('↑  JUMP / 喷气越桥',0xffc378);sign.position.copy(pose(a-17,0,5,m));root.add(sign);}}
  let next=nextGrip(Math.max(0,from-80));while(next&&next.a-55<to){const s=next.a-55;if(s>=from){const sign=label(next.name+' / 开启吸地',0xc4aeff);sign.position.copy(pose(s,0,5.5,m));root.add(sign);for(const x of [-m.width,m.width])at('gripgate',0xb4a0ff,.2,6,.2,s,x,3,0x9175ff);at('gripgate',0xb4a0ff,m.width*2,.2,.2,s,0,6,0x9175ff);}next=nextGrip(next.b);}
- if(index===0){for(const x of [-m.width,m.width])at('gate',0xa7d7cd,.35,7,.35,5,x,3.5);at('gate',0xa7d7cd,m.width*2,.3,.35,5,0,7);const sign=label('ENDLESS / 无尽驾驶',m.accent);sign.position.copy(pose(5,0,7.8,m));root.add(sign);}
+ if(index===0){for(const x of [-m.width,m.width])at('gate',0xa7d7cd,.35,7,.35,5,x,3.5);at('gate',0xa7d7cd,m.width*2,.3,.35,5,0,7);const sign=label('MANUAL / 手动驾驶',m.accent);sign.position.copy(pose(5,0,7.8,m));root.add(sign);}
  for(const {entries,mat}of batches.values()){const mesh=new T.InstancedMesh(new T.BoxGeometry(1,1,1),mat,entries.length);entries.forEach((e,i)=>{dummy.position.set(e.x,e.y,e.z);dummy.scale.set(e.w,e.h,e.d);dummy.rotation.set(0,e.rot,e.roll,'YXZ');dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.receiveShadow=true;root.add(mesh);}
  return {root,ringData,ringMeshes,obstacles:obstaclesData};
 }

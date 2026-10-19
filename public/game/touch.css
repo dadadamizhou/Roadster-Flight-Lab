@@ -92,7 +92,7 @@
  #hud #minimap,#hud .bottom-hint{display:none}
  #hud .touch-drive{position:fixed;left:calc(var(--hud-edge) + 6px);bottom:calc(var(--control-bottom) + 12px);display:block;pointer-events:none}
  .steering-pad{position:relative;display:block;width:112px;height:112px;touch-action:none;-webkit-touch-callout:none;border:1px solid #aecbd04a;border-radius:50%;background:radial-gradient(circle,#2b455455 0 37%,#0e1f2966 38% 64%,#b2cdda0a 65%);box-shadow:inset 0 0 0 7px #cadde704,0 4px 16px #0002;pointer-events:auto}
- .stick-knob{position:absolute;left:50%;top:50%;width:45px;height:45px;transform:translate(-50%,-50%) translateX(var(--stick-x,0px));border:1px solid #c0dbe587;border-radius:50%;background:linear-gradient(145deg,#587789cf,#2a4659e0);box-shadow:inset 0 0 0 4px #d8ffff08,0 3px 10px #0004;pointer-events:none}
+ .stick-knob{position:absolute;left:50%;top:50%;width:45px;height:45px;transform:translate(-50%,-50%) translate(var(--stick-x,0px),var(--stick-y,0px));border:1px solid #c0dbe587;border-radius:50%;background:linear-gradient(145deg,#587789cf,#2a4659e0);box-shadow:inset 0 0 0 4px #d8ffff08,0 3px 10px #0004;pointer-events:none}
  .steering-pad.pressed{border-color:#c4f9de88}.steering-pad.pressed .stick-knob{background:linear-gradient(145deg,#74a48f,#315c51);border-color:#b4f7d1}
  .stick-arrow{position:absolute;top:50%;transform:translateY(-50%);font-size:24px;color:#afccd456;pointer-events:none}.stick-arrow.left{left:12px}.stick-arrow.right{right:12px}
  .steering-pad small{position:absolute;bottom:-18px;width:100%;text-align:center;font-size:8px;letter-spacing:3px;color:#abc4cb80;pointer-events:none}
@@ -121,3 +121,5 @@
 }
 @media(orientation:landscape) and (max-width:650px){.hero h1{font-size:37px}.hero .eyebrow{font-size:6px}.map-info{padding:8px}.map h3{font-size:11px}}
 @media(prefers-reduced-motion:reduce){#hud .control-button,#trickHud{transition:none}}
+
+.stick-label{position:absolute;left:0;width:100%;font-size:7px;letter-spacing:1px;color:#bad4db99;text-align:center;pointer-events:none}.stick-label.forward{top:10px}.stick-label.reverse{bottom:10px}
