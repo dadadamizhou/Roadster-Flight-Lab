@@ -4,7 +4,8 @@ export function createTouchInput(enabled = () => true) {
   const buttons = new Map();
   function paint() {
     for (const [button, codes] of buttons) {
-      const active = [...pointers.values()].some(p => codes.every(code => p.codes.includes(code)));
+      const active = [...pointers.values()].some(p => codes.length
+        ? codes.every(code => p.codes.includes(code)) : p.button === button);
       button.classList.toggle('pressed', active);
     }
   }
@@ -15,6 +16,29 @@ export function createTouchInput(enabled = () => true) {
       const held = [...pointers.entries()];
       pointers.clear(); paint();
       for (const [id, p] of held) if (p.button.hasPointerCapture(id)) p.button.releasePointerCapture(id);
+    },
+    bindAction(button, action) {
+      buttons.set(button, []);
+      button.addEventListener('contextmenu', e => e.preventDefault());
+      button.addEventListener('pointerdown', e => {
+        if (!enabled() || button.disabled || e.button !== 0 || pointers.has(e.pointerId)) return;
+        // Secondary fingers may never produce a click while the steering finger
+        // stays down. Activate on this pointer's down event instead.
+        e.preventDefault();
+        pointers.set(e.pointerId, { button, codes: [] });
+        button.setPointerCapture(e.pointerId);
+        paint();
+        action();
+      });
+      for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+        button.addEventListener(event, e => release(e.pointerId));
+      }
+      button.addEventListener('click', e => {
+        // A physical tap was already handled, even if its click arrives late.
+        // Keep keyboard and assistive-technology activation (detail 0) working.
+        if (e.detail !== 0 || e.pointerType) { e.preventDefault(); return; }
+        if (enabled() && !button.disabled) action();
+      });
     },
     bind(button, codes, slideTarget) {
       buttons.set(button, codes);
